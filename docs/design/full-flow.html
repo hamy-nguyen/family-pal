@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}*::-webkit-scrollbar{width:0;height:0}
+  body{background:#e8e7ef;font-family:'Plus Jakarta Sans',system-ui,sans-serif;margin:0;padding:34px}
+  .sec{max-width:1360px;margin:6px auto 12px;font-size:15px;font-weight:800;color:#6366f1;letter-spacing:.02em;text-transform:uppercase}
+  .wrap{display:flex;flex-wrap:wrap;gap:44px 30px;justify-content:center;max-width:1360px;margin:0 auto 30px;align-items:flex-start}
+  .frame{width:392px}
+  .label{font-size:13px;font-weight:700;color:#4b4a5e;margin-bottom:11px;display:flex;gap:8px;align-items:center}
+  .step{min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:#6366f1;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .phone{width:392px;min-height:834px;background:#f4f4f9;border-radius:40px;box-shadow:0 22px 54px rgba(30,27,75,.16);overflow:hidden;position:relative;border:1px solid #e0dfea}
+  .screen{min-height:834px;display:flex;flex-direction:column;color:#1e1b4b}
+  .pad{padding:60px 22px 22px}
+  .body{padding:8px 20px 26px;display:flex;flex-direction:column;gap:16px}
+  .hdr{display:flex;align-items:center;gap:12px;padding:56px 22px 8px}
+  .backbtn{width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #ececf4;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 2px 8px rgba(30,27,75,.04)}
+  .htitle{font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .hsub{font-size:12.5px;font-weight:600;color:#9b9aaa;margin-top:1px}
+  .card{background:#fff;border:1px solid #efeef6;border-radius:18px;box-shadow:0 4px 18px rgba(30,27,75,.05)}
+  .primary{background:#6366f1;color:#fff;border:none;border-radius:16px;font-family:inherit;font-weight:700;font-size:15.5px;padding:16px;width:100%;box-shadow:0 10px 24px rgba(99,102,241,.4);cursor:pointer}
+  .ghost{background:none;border:none;color:#8d8c9c;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer;width:100%;padding:6px}
+  .inp{background:#fff;border:1px solid #ececf4;border-radius:13px;padding:12px 13px;font-size:14px;font-weight:600;color:#1e1b4b;box-shadow:0 2px 8px rgba(30,27,75,.03);width:100%}
+  .inp.ai{border-color:#dcdef9;background:#fbfbff}.inp.ph{color:#b4b3c2;font-weight:500}
+  .flbl{font-size:12px;font-weight:600;color:#8d8c9c;margin-bottom:6px;display:block}
+  .seclbl{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#a3a2b4}
+  .aibadge{display:inline-flex;align-items:center;gap:5px;background:#eef0fe;color:#5457d6;border-radius:999px;padding:4px 10px;font-size:10.5px;font-weight:700}
+  .req{color:#e0455a}
+  .add{border:1.5px dashed #cdd0dd;border-radius:13px;background:#fbfbfe;padding:12px;display:flex;align-items:center;justify-content:center;gap:8px;color:#6366f1;font-size:13px;font-weight:700}
+  .pav{border-radius:50%;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+  .seg{display:flex;background:#eef0f4;border-radius:12px;padding:3px}.seg>div{flex:1;text-align:center;font-size:13px;font-weight:600;color:#7b7a8a;padding:9px;border-radius:9px}.seg>div.on{background:#fff;color:#1e1b4b;box-shadow:0 1px 4px rgba(30,27,75,.08)}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:8px 13px;font-size:13px;font-weight:600;border:1px solid #ececf4;background:#fff;color:#4b4a5e}.pill.on{background:#6366f1;border-color:#6366f1;color:#fff;font-weight:700}
+  .dot{width:7px;height:7px;border-radius:50%;background:#d7d6e4}.dot.on{width:22px;border-radius:4px;background:#6366f1}
+  .cat{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex:none}
+  .mchip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 9px 3px 4px}
+  .mav{width:18px;height:18px;border-radius:50%;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .rowln{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f1f1f7}.rowln:last-child{border-bottom:none}
+  .rlbl{font-size:13px;font-weight:500;color:#9b9aaa}.rval{font-size:14px;font-weight:700;text-align:right}
+  .docph{border-radius:16px;background:linear-gradient(150deg,#f7f8fc,#eef0f6);border:1px solid #e9eaf2}.doln{height:6px;border-radius:3px;background:#dfe2ec}
+  .spin{width:46px;height:46px;border-radius:50%;border:4px solid #e6e6f6;border-top-color:#6366f1;animation:sp .9s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+  .cls{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none}
+  .thumb{border-radius:9px;background:linear-gradient(150deg,#f2f3f8,#e7e9f2);border:1px solid #e6e7f0;flex:none}
+</style>
+</head>
+<body>
+
+<div class="sec">Onboarding &amp; account</div>
+<div class="wrap">
+
+  <div class="frame"><div class="label"><span class="step">1</span> Onboarding</div>
+    <div class="phone"><div class="screen" style="justify-content:space-between">
+      <div class="pad" style="padding-top:96px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:26px">
+        <div style="width:150px;height:150px;border-radius:44px;background:linear-gradient(150deg,#eef0fe,#e3e6ff);display:flex;align-items:center;justify-content:center;box-shadow:0 18px 40px rgba(99,102,241,.22)"><svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3.4"/></svg></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><div style="font-size:27px;font-weight:800;letter-spacing:-.03em;line-height:1.15">Your family's health,<br>in one place</div><div style="font-size:14.5px;font-weight:500;color:#7b7a8a;line-height:1.55;padding:0 8px">Snap a prescription, record or scan result — we read it and organize it into a searchable history for everyone you care for.</div></div>
+      </div>
+      <div class="pad" style="padding-bottom:38px;display:flex;flex-direction:column;gap:20px;align-items:center"><div style="display:flex;gap:7px"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div><button class="primary">Get started</button></div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">2</span> Sign in · magic link</div>
+    <div class="phone"><div class="screen">
+      <div class="pad" style="padding-top:84px;display:flex;flex-direction:column;gap:26px">
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="width:52px;height:52px;border-radius:16px;background:#6366f1;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(99,102,241,.35);margin-bottom:8px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="m22 7-10 6L2 7"/></svg></div><div style="font-size:24px;font-weight:800;letter-spacing:-.02em">Welcome to Family Pal</div><div style="font-size:14px;font-weight:500;color:#7b7a8a;line-height:1.5">Enter your email and we'll send a magic link — no password to remember.</div></div>
+        <div><span class="flbl">Email</span><div class="inp">hung@growtrics.ai</div></div>
+        <button class="primary">Send magic link</button>
+        <div style="text-align:center;font-size:12px;font-weight:500;color:#a3a2b4;line-height:1.5">By continuing you agree to our Terms &amp; Privacy Policy.</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">3</span> Check your email</div>
+    <div class="phone"><div class="screen" style="justify-content:space-between">
+      <div class="pad" style="padding-top:120px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px"><div style="width:96px;height:96px;border-radius:30px;background:#e3f4ea;display:flex;align-items:center;justify-content:center"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2f9e6f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="m22 7-10 6L2 7"/></svg></div><div style="display:flex;flex-direction:column;gap:9px"><div style="font-size:22px;font-weight:800;letter-spacing:-.02em">Check your email</div><div style="font-size:14px;font-weight:500;color:#7b7a8a;line-height:1.55">We sent a sign-in link to<br><span style="font-weight:700;color:#1e1b4b">hung@growtrics.ai</span>. Tap it to continue.</div></div></div>
+      <div class="pad" style="padding-bottom:40px;display:flex;flex-direction:column;gap:12px"><button class="primary">Open email app</button><button class="ghost">Didn't get it? Resend link</button></div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">4</span> First run · your profile</div>
+    <div class="phone"><div class="screen">
+      <div class="hdr"><div><div class="htitle">Set up your profile</div><div class="hsub">Step 1 of 2 · This is you</div></div></div>
+      <div class="body"><div style="display:flex;flex-direction:column;align-items:center;gap:10px"><div class="pav" style="width:82px;height:82px;background:#8b5cf6;font-size:30px">H</div><span style="font-size:12.5px;font-weight:600;color:#6366f1">Change color</span></div>
+        <div><span class="flbl">Name</span><div class="inp">Hung</div></div>
+        <div><span class="flbl">Date of birth</span><div class="inp ph">Select date</div></div>
+        <div><span class="flbl">Sex</span><div class="seg"><div>Male</div><div class="on">—</div><div>Female</div></div></div>
+        <div class="card" style="padding:13px 15px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:#7b7a8a">＋ Add medical details (optional)</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+        <button class="primary" style="margin-top:4px">Continue</button>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">5</span> First run · add family</div>
+    <div class="phone"><div class="screen">
+      <div class="hdr"><div class="backbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b4a5e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div><div class="htitle">Add your family</div><div class="hsub">Step 2 of 2 · You can add more later</div></div></div>
+      <div class="body">
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:13px"><div class="pav" style="width:46px;height:46px;background:#8b5cf6;font-size:18px">H</div><div style="flex:1"><div style="font-size:15px;font-weight:700">Hung</div><div style="font-size:12.5px;font-weight:500;color:#9b9aaa">You</div></div><span style="padding:4px 10px;background:#f1ebfd;color:#6d28d9;font-size:11px;font-weight:700;border-radius:999px">self</span></div>
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:13px"><div class="pav" style="width:46px;height:46px;background:#ec4899;font-size:18px">M</div><div style="flex:1"><div style="font-size:15px;font-weight:700">Mom</div><div style="font-size:12.5px;font-weight:500;color:#9b9aaa">Parent</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4c3d0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></div>
+        <div class="add" style="padding:16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add a person</div>
+        <button class="primary" style="margin-top:6px">Continue to app</button><button class="ghost">Skip for now</button>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="sec">Main flow · capture &amp; browse</div>
+<div class="wrap">
+
+  <div class="frame"><div class="label"><span class="step">6</span> Home · records</div>
+    <div class="phone"><div class="screen">
+      <div style="padding:56px 20px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:600;color:#9b9aaa">Good afternoon</div><div style="font-size:23px;font-weight:800;letter-spacing:-.02em;margin-top:2px">Your Family</div></div><div class="pav" style="width:46px;height:46px;background:#6366f1;font-size:17px;box-shadow:0 6px 16px rgba(99,102,241,.35)">H</div></div>
+        <div style="margin-top:16px;display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #ececf4;border-radius:16px;padding:13px 15px;box-shadow:0 2px 10px rgba(30,27,75,.04)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a3a2b4" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font-size:14px;color:#a3a2b4;font-weight:500">Search records, hospitals, medicine</span></div>
+      </div>
+      <div style="display:flex;gap:18px;overflow-x:auto;padding:18px 20px 4px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:none"><div class="pav" style="width:56px;height:56px;background:#6366f1;box-shadow:0 0 0 3px #fff,0 0 0 5px #6366f1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div><span style="font-size:12.5px;font-weight:700">Everyone</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:none"><div class="pav" style="width:56px;height:56px;background:#8b5cf6;font-size:21px">H</div><span style="font-size:12.5px;font-weight:500;color:#6b6a7b">Hung</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:none"><div class="pav" style="width:56px;height:56px;background:#ec4899;font-size:21px">M</div><span style="font-size:12.5px;font-weight:500;color:#6b6a7b">Mom</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:none"><div class="pav" style="width:56px;height:56px;background:#3b82f6;font-size:21px">D</div><span style="font-size:12.5px;font-weight:500;color:#6b6a7b">Dad</span></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 6px"><div style="display:flex;align-items:baseline;gap:7px"><span style="font-size:15px;font-weight:800">All records</span><span style="font-size:13px;font-weight:600;color:#a3a2b4">14</span></div><div style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #ececf4;border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:600;color:#4b4a5e;box-shadow:0 2px 8px rgba(30,27,75,.04)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"/></svg>Newest</div></div>
+      <div style="padding:6px 20px 40px;display:flex;flex-direction:column;gap:16px">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin:4px 2px 11px"><span style="font-size:13px;font-weight:800">January 2026</span><span style="font-size:11.5px;font-weight:600;color:#a3a2b4">1 visit</span></div>
+          <div class="card" style="display:flex;align-items:center;gap:13px;padding:14px"><div class="cat" style="background:#e6effb;color:#3b73c4"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0Z"/><path d="M12 9v6"/></svg></div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:10px"><span style="font-size:15.5px;font-weight:700">Viêm dạ dày trào ngược</span><span style="font-size:15px;font-weight:800">750K</span></div><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b4b3c2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span style="font-size:13px;font-weight:500;color:#7b7a8a">BV ĐH Y Hà Nội</span></div><div style="display:flex;align-items:center;gap:9px;margin-top:9px"><span class="mchip" style="background:#fde8f0"><span class="mav" style="background:#ec4899">M</span><span style="font-size:12px;font-weight:600;color:#be185d">Mom</span></span><span style="font-size:12.5px;font-weight:500;color:#a3a2b4">Jan 9</span></div></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin:4px 2px 11px"><span style="font-size:13px;font-weight:800">October 2025</span><span style="font-size:11.5px;font-weight:600;color:#a3a2b4">1 visit</span></div>
+          <div class="card" style="display:flex;align-items:center;gap:13px;padding:14px"><div class="cat" style="background:#fdecd8;color:#d97a2b"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10a4 4 0 1 1 7 2.6c-1 1.1-2 1.4-2 2.9a2.5 2.5 0 0 1-4.6 1.4"/><path d="M10.5 9.5a1.6 1.6 0 0 1 2.7 1.1"/></svg></div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:10px"><span style="font-size:15.5px;font-weight:700">Viêm họng cấp</span><span style="font-size:15px;font-weight:800">350K</span></div><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b4b3c2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span style="font-size:13px;font-weight:500;color:#7b7a8a">BV Xanh Pôn</span></div><div style="display:flex;align-items:center;gap:9px;margin-top:9px"><span class="mchip" style="background:#f1ebfd"><span class="mav" style="background:#8b5cf6">H</span><span style="font-size:12px;font-weight:600;color:#6d28d9">Hung</span></span><span style="font-size:12.5px;font-weight:500;color:#a3a2b4">Oct 17</span></div></div></div>
+        </div>
+      </div>
+      <div style="position:absolute;bottom:26px;left:0;right:0;display:flex;justify-content:center"><div class="primary" style="width:auto;display:flex;align-items:center;gap:9px;border-radius:999px;padding:15px 24px;font-size:15px;box-shadow:0 12px 28px rgba(99,102,241,.45)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3.2"/></svg>Add record</div></div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">7</span> Capture · add documents</div>
+    <div class="phone"><div class="screen">
+      <div class="hdr"><div class="backbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b4a5e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div><div class="htitle">New record</div><div class="hsub">Step 1 of 2 · Add documents</div></div></div>
+      <div class="body">
+        <div style="display:flex;flex-direction:column;gap:6px"><span class="seclbl">The papers you received</span><span style="font-size:13.5px;font-weight:500;color:#7b7a8a;line-height:1.5">Add everything — record, prescription, test &amp; scan results. We'll read them for you.</span></div>
+        <div class="card" style="padding:12px;display:flex;align-items:center;gap:12px"><div class="thumb" style="width:44px;height:56px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8d8c9c" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-linecap="round"/></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700">Medical record</div><div style="font-size:12px;font-weight:500;color:#9b9aaa">Phiếu khám bệnh</div></div><div style="width:22px;height:22px;border-radius:50%;background:#2f9e6f;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 6"/></svg></div></div>
+        <div class="card" style="padding:12px;display:flex;align-items:center;gap:12px"><div class="thumb" style="width:44px;height:56px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8d8c9c" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-linecap="round"/></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700">Prescription</div><div style="font-size:12px;font-weight:500;color:#9b9aaa">Đơn thuốc</div></div><div style="width:22px;height:22px;border-radius:50%;background:#2f9e6f;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 6"/></svg></div></div>
+        <div class="card" style="padding:12px;display:flex;align-items:center;gap:12px"><div class="thumb" style="width:44px;height:56px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8d8c9c" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-linecap="round"/></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700">Endoscopy result</div><div style="font-size:12px;font-weight:500;color:#9b9aaa">Nội soi · test &amp; scan</div></div><div style="width:22px;height:22px;border-radius:50%;background:#2f9e6f;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 6"/></svg></div></div>
+        <div class="add" style="padding:14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add a document</div>
+        <button class="primary" style="display:flex;align-items:center;justify-content:center;gap:9px;margin-top:2px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5L13 3Z"/></svg>Read with AI</button>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">8</span> AI reading</div>
+    <div class="phone"><div class="screen">
+      <div class="hdr"><div class="backbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b4a5e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div><div class="htitle">New record</div><div class="hsub">Reading your documents…</div></div></div>
+      <div style="padding:20px;display:flex;flex-direction:column;align-items:center;gap:22px">
+        <div style="position:relative;width:150px;height:190px;margin-top:30px"><div class="docph" style="position:absolute;inset:0;transform:rotate(-5deg);padding:16px;display:flex;flex-direction:column;gap:9px;box-shadow:0 12px 30px rgba(30,27,75,.12)"><div class="doln" style="width:50%;background:#cfd3e0"></div><div class="doln" style="width:86%;margin-top:4px"></div><div class="doln" style="width:72%"></div><div class="doln" style="width:80%"></div><div class="doln" style="width:60%"></div></div><div style="position:absolute;left:0;right:0;top:40%;height:3px;background:linear-gradient(90deg,transparent,#6366f1,transparent);box-shadow:0 0 12px 2px rgba(99,102,241,.5)"></div></div>
+        <div class="spin"></div>
+        <div style="text-align:center;display:flex;flex-direction:column;gap:5px"><span style="font-size:17px;font-weight:800">Reading your documents</span><span style="font-size:13px;font-weight:500;color:#9b9aaa">Pulling out diagnosis, drugs &amp; test results</span></div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:11px;margin-top:6px">
+          <div style="display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #efeef6;border-radius:14px;padding:13px 15px"><div style="width:22px;height:22px;border-radius:50%;background:#2f9e6f;display:flex;align-items:center;justify-content:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 6"/></svg></div><span style="font-size:13.5px;font-weight:600">Documents read</span></div>
+          <div style="display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #e3e4f6;border-radius:14px;padding:13px 15px"><div style="width:22px;height:22px;border-radius:50%;border:2.5px solid #c7c8ee;border-top-color:#6366f1;flex:none;animation:sp .9s linear infinite"></div><span style="font-size:13.5px;font-weight:600;color:#8d8c9c">Extracting the details…</span></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">9</span> Review &amp; save</div>
+    <div class="phone"><div class="screen">
+      <div class="hdr"><div class="backbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b4a5e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div><div class="htitle">Review &amp; save</div><div class="hsub">Step 2 of 2 · Check the details</div></div></div>
+      <div class="body">
+        <div><span class="flbl">Who is this for?</span><div style="display:flex;gap:8px"><div style="display:flex;align-items:center;gap:7px;background:#ec4899;border-radius:999px;padding:6px 13px 6px 6px"><span style="width:22px;height:22px;border-radius:50%;background:#fff;color:#ec4899;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">M</span><span style="font-size:13px;font-weight:700;color:#fff">Mom</span></div><div style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #ececf4;border-radius:999px;padding:6px 13px 6px 6px"><span style="width:22px;height:22px;border-radius:50%;background:#8b5cf6;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">H</span><span style="font-size:13px;font-weight:600;color:#4b4a5e">Hung</span></div></div></div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="seclbl">Medical record</span><span class="aibadge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5457d6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5L13 3Z"/></svg>Auto-filled</span></div>
+          <div><span class="flbl">Diagnosis <span class="req">*</span></span><div class="inp ai">Viêm dạ dày trào ngược</div></div>
+          <div style="display:flex;gap:10px"><div style="flex:1.4"><span class="flbl">Clinic <span class="req">*</span></span><div class="inp ai">BV ĐH Y Hà Nội</div></div><div style="flex:1"><span class="flbl">Date <span class="req">*</span></span><div class="inp ai">09/01/26</div></div></div>
+          <div><span class="flbl">Disease process <span class="req">*</span></span><div class="inp" style="min-height:52px;font-weight:500;color:#7b7a8a;line-height:1.5">Ợ hơi, nóng rát sau xương ức 2 tuần, tăng về đêm.</div></div>
+          <div class="card" style="padding:11px 14px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:12.5px;font-weight:600;color:#7b7a8a">More · doctor, ICD (K21), reason, follow-up</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4c3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span class="seclbl">Prescription · drugs</span>
+          <div class="card" style="padding:12px 13px"><div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">Esomeprazole <span style="color:#9b9aaa;font-weight:600">40mg</span></span><span style="font-size:12.5px;font-weight:700;color:#6366f1">30 viên</span></div><div style="font-size:12.5px;font-weight:500;color:#8d8c9c;margin-top:2px">Sáng 1 viên, trước ăn 30 phút</div></div>
+          <div class="card" style="padding:12px 13px"><div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">Itopride <span style="color:#9b9aaa;font-weight:600">50mg</span></span><span style="font-size:12.5px;font-weight:700;color:#6366f1">60 viên</span></div><div style="font-size:12.5px;font-weight:500;color:#8d8c9c;margin-top:2px">3 lần/ngày, trước ăn</div></div>
+          <div class="add"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add drug</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span class="seclbl">Supplements · not medication</span>
+          <div class="card" style="padding:12px 13px;border-left:3px solid #f59e0b"><div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">SMH PRO</span><span style="font-size:12.5px;font-weight:700;color:#6366f1">2 hộp</span></div><div style="font-size:12.5px;font-weight:500;color:#8d8c9c;margin-top:2px">Xúc họng ngày 3 lần</div></div>
+          <div class="add"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add supplement</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span class="seclbl">Test &amp; scan results</span>
+          <div class="card" style="padding:11px 13px;display:flex;align-items:center;gap:11px"><div class="cls" style="background:#e1f1f2;color:#2c8f93"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.7l5.3 5.3a7.5 7.5 0 1 1-10.6 0Z"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">Endoscopy</div><div style="font-size:12.5px;font-weight:500;color:#8d8c9c">Viêm thực quản trào ngược · H.P (−)</div></div><div class="thumb" style="width:34px;height:44px"></div></div>
+          <div class="card" style="padding:11px 13px;display:flex;align-items:center;gap:11px"><div class="cls" style="background:#fde7e9;color:#d6455a"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0Z"/><path d="M12 9v6"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">Blood test</div><div style="font-size:12.5px;font-weight:500;color:#8d8c9c">CRP 14.6 ↑ · bạch cầu tăng</div></div><div class="thumb" style="width:34px;height:44px"></div></div>
+          <div class="add"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add result</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span class="seclbl">Fees · optional</span><div style="display:flex;gap:10px"><div style="flex:1"><span class="flbl">Consultation</span><div class="inp">300,000đ</div></div><div style="flex:1"><span class="flbl">Medication</span><div class="inp">450,000đ</div></div></div><div class="card" style="padding:13px 15px;display:flex;justify-content:space-between;background:#f7f8fc"><span style="font-size:13px;font-weight:700">Total</span><span style="font-size:15px;font-weight:800">750,000đ</span></div></div>
+        <button class="primary" style="margin-top:2px">Save record</button>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">10</span> Visit detail</div>
+    <div class="phone"><div class="screen">
+      <div class="hdr" style="justify-content:space-between"><div style="display:flex;align-items:center;gap:12px"><div class="backbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b4a5e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="htitle">Visit</div></div><div class="backbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4b4a5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></div></div>
+      <div class="body" style="gap:14px">
+        <div class="card" style="padding:18px;display:flex;flex-direction:column;gap:15px"><div style="display:flex;align-items:center;gap:13px"><div style="width:54px;height:54px;border-radius:15px;background:#e6effb;color:#3b73c4;display:flex;align-items:center;justify-content:center;flex:none"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0Z"/><path d="M12 9v6"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:18px;font-weight:800;letter-spacing:-.02em">Viêm dạ dày trào ngược</div><div style="font-size:12.5px;font-weight:500;color:#9b9aaa;margin-top:2px">K21 · January 9, 2026</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid #f1f1f7"><span class="mchip" style="background:#fde8f0;padding:5px 12px 5px 5px"><span class="mav" style="background:#ec4899;width:22px;height:22px;font-size:11px">M</span><span style="font-size:13px;font-weight:700;color:#be185d">Mom</span></span><div style="text-align:right"><div style="font-size:10.5px;font-weight:600;color:#a3a2b4;text-transform:uppercase;letter-spacing:.04em">Total</div><div style="font-size:19px;font-weight:800">750,000đ</div></div></div></div>
+        <div class="card" style="padding:6px 16px"><div class="rowln"><span class="rlbl">Clinic</span><span class="rval">BV ĐH Y Hà Nội</span></div><div class="rowln"><span class="rlbl">Doctor</span><span class="rval">BS. Hoàng Cẩm Tú</span></div><div class="rowln"><span class="rlbl">Follow-up</span><span class="rval" style="color:#6366f1">Feb 9, 2026</span></div></div>
+        <div class="card" style="padding:14px 16px;display:flex;flex-direction:column;gap:7px"><span class="seclbl">Disease process</span><span style="font-size:13.5px;font-weight:500;color:#4b4a5e;line-height:1.55">Ợ hơi, nóng rát sau xương ức 2 tuần, tăng về đêm sau ăn muộn.</span></div>
+        <div style="display:flex;flex-direction:column;gap:9px"><span class="seclbl" style="margin-left:2px">Test &amp; scan results</span>
+          <div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:11px"><div class="cls" style="background:#e1f1f2;color:#2c8f93"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.7l5.3 5.3a7.5 7.5 0 1 1-10.6 0Z"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">Endoscopy</div><div style="font-size:12.5px;font-weight:500;color:#8d8c9c">Viêm thực quản trào ngược · H.P (−)</div></div><div class="thumb" style="width:34px;height:44px"></div></div>
+          <div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:11px"><div class="cls" style="background:#fde7e9;color:#d6455a"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0Z"/><path d="M12 9v6"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">Blood test</div><div style="font-size:12.5px;font-weight:500;color:#8d8c9c">CRP 14.6 ↑ · bạch cầu tăng</div></div><div class="thumb" style="width:34px;height:44px"></div></div>
+        </div>
+        <div class="card" style="padding:14px 16px;display:flex;flex-direction:column;gap:11px"><span class="seclbl">Prescription</span>
+          <div style="display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:9px;background:#eef0fe;color:#6366f1;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5-7-7a4.95 4.95 0 0 1 7-7l7 7a4.95 4.95 0 0 1-7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Esomeprazole 40mg</div><div style="font-size:12px;font-weight:500;color:#9b9aaa">Sáng 1 viên trước ăn · 30 viên</div></div></div>
+          <div style="display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:9px;background:#eef0fe;color:#6366f1;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5-7-7a4.95 4.95 0 0 1 7-7l7 7a4.95 4.95 0 0 1-7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Itopride 50mg</div><div style="font-size:12px;font-weight:500;color:#9b9aaa">3 lần/ngày trước ăn · 60 viên</div></div></div>
+        </div>
+        <div class="card" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px"><span class="seclbl">Supplements</span><div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;font-weight:700">SMH PRO <span style="font-weight:500;color:#9b9aaa;font-size:12px">· không phải thuốc</span></span><span style="font-size:12.5px;font-weight:600;color:#9b9aaa">2 hộp</span></div></div>
+        <div><span class="seclbl" style="margin-left:2px">Attached photos</span><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:9px"><div class="thumb" style="height:96px"></div><div class="thumb" style="height:96px"></div><div class="thumb" style="height:96px"></div></div></div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="sec">Manage profiles</div>
+<div class="wrap">
+
+  <div class="frame"><div class="label"><span class="step">11</span> Profiles list</div>
+    <div class="phone"><div class="screen">
+      <div class="hdr" style="justify-content:space-between"><div style="display:flex;align-items:center;gap:12px"><div class="backbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b4a5e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="htitle">Profiles</div></div></div>
+      <div class="body">
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:13px"><div class="pav" style="width:48px;height:48px;background:#8b5cf6;font-size:19px">H</div><div style="flex:1"><div style="font-size:15.5px;font-weight:700">Hung</div><div style="font-size:12.5px;font-weight:500;color:#9b9aaa">You · 4 records</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4c3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:13px"><div class="pav" style="width:48px;height:48px;background:#ec4899;font-size:19px">M</div><div style="flex:1"><div style="font-size:15.5px;font-weight:700">Mom</div><div style="font-size:12.5px;font-weight:500;color:#9b9aaa">Parent · 7 records</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4c3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:13px"><div class="pav" style="width:48px;height:48px;background:#3b82f6;font-size:19px">D</div><div style="flex:1"><div style="font-size:15.5px;font-weight:700">Dad</div><div style="font-size:12.5px;font-weight:500;color:#9b9aaa">Parent · 3 records</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4c3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
+        <button class="primary" style="margin-top:6px">＋ Add profile</button>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">12</span> Add / edit profile</div>
+    <div class="phone"><div class="screen">
+      <div class="hdr"><div class="backbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b4a5e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div><div class="htitle">Edit profile</div></div></div>
+      <div class="body">
+        <div style="display:flex;align-items:center;gap:14px"><div class="pav" style="width:64px;height:64px;background:#ec4899;font-size:24px">M</div><div style="display:flex;gap:7px"><span style="width:26px;height:26px;border-radius:50%;background:#ec4899;box-shadow:0 0 0 2px #fff,0 0 0 4px #ec4899"></span><span style="width:26px;height:26px;border-radius:50%;background:#3b82f6"></span><span style="width:26px;height:26px;border-radius:50%;background:#8b5cf6"></span><span style="width:26px;height:26px;border-radius:50%;background:#0d9488"></span><span style="width:26px;height:26px;border-radius:50%;background:#f59e0b"></span></div></div>
+        <div><span class="flbl">Name</span><div class="inp">Mom</div></div>
+        <div><span class="flbl">Relationship</span><div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill on">Parent</span><span class="pill">Child</span><span class="pill">Spouse</span><span class="pill">Other</span></div></div>
+        <div style="display:flex;gap:12px"><div style="flex:1"><span class="flbl">Date of birth</span><div class="inp ph">Select</div></div><div style="flex:1"><span class="flbl">Sex</span><div class="inp">Female</div></div></div>
+        <div class="card" style="padding:13px 15px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:#7b7a8a">Medical details · allergies, blood type…</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+        <button style="background:none;border:none;color:#e0455a;font-family:inherit;font-size:13.5px;font-weight:700;padding:4px;cursor:pointer">Delete profile</button>
+        <button class="primary">Save</button>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="frame"><div class="label"><span class="step">13</span> Account</div>
+    <div class="phone"><div class="screen">
+      <div class="hdr"><div class="backbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b4a5e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="htitle">Account</div></div>
+      <div class="body">
+        <div class="card" style="padding:18px;display:flex;align-items:center;gap:14px"><div class="pav" style="width:54px;height:54px;background:#6366f1;font-size:20px">H</div><div><div style="font-size:16px;font-weight:800">Hung</div><div style="font-size:12.5px;font-weight:500;color:#9b9aaa">hung@growtrics.ai</div></div></div>
+        <div class="card" style="overflow:hidden"><div style="padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f1f1f7"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg><span style="flex:1;font-size:14.5px;font-weight:600">Profiles</span><span style="font-size:12.5px;color:#a3a2b4;font-weight:600">3</span></div><div style="padding:16px 18px;display:flex;align-items:center;gap:12px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg><span style="flex:1;font-size:14.5px;font-weight:600">Invite a co-caregiver</span><span style="font-size:11px;color:#8d8c9c;font-weight:700;background:#eef0f4;border-radius:999px;padding:3px 8px">soon</span></div></div>
+        <div class="card" style="padding:16px 18px;display:flex;align-items:center;gap:12px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#e0455a" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span style="font-size:14.5px;font-weight:700;color:#e0455a">Sign out</span></div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+</body>
+</html>
