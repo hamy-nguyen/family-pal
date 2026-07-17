@@ -24,7 +24,9 @@ type Ctx = {
   loading: boolean;
   can: (cap: Capability) => boolean;
   setPreviewRole: (r: Role | null) => void;
-  refresh: () => void;
+  households: Array<{ id: string; name: string; role: Role }>;
+  switchHousehold: (id: string) => void;
+  refresh: () => Promise<void>;
   signOut: () => void;
 };
 const AuthCtx = createContext<Ctx | null>(null);
@@ -42,34 +44,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<Role | null>(null);
   const [realRole, setRealRole] = useState<Role | null>(null);
   const [preview, setPreview] = useState<Role | null>(null);
+  const [households, setHouseholds] = useState<Array<{ id: string; name: string; role: Role }>>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(() => {
-    setSession(auth.getSession());
-    setRole(auth.effectiveRole());
-    setRealRole(auth.currentRole());
+  const load = useCallback(async () => {
+    try {
+      const [s, eff, real, hh] = await Promise.all([
+        auth.getSession(),
+        auth.effectiveRole(),
+        auth.currentRole(),
+        auth.listHouseholds(),
+      ]);
+      setSession(s);
+      setRole(eff);
+      setRealRole(real);
+      setHouseholds(hh);
+    } catch {
+      setSession(null);
+      setRole(null);
+      setRealRole(null);
+      setHouseholds([]);
+    }
     setPreview(auth.previewRole());
   }, []);
 
   useEffect(() => {
-    load();
-    setLoading(false);
+    load().finally(() => setLoading(false));
+    // Re-read the session whenever auth settles — stops the post-signup flip-flop.
+    const unsub = auth.onAuthChange(() => void load());
+    return unsub;
   }, [load]);
 
   const setPreviewRole = useCallback(
     (r: Role | null) => {
       auth.setPreviewRole(r);
-      load();
+      void load();
     },
     [load],
   );
 
   const can = useCallback((cap: Capability) => canFor(role, cap), [role]);
 
+  const switchHousehold = useCallback(
+    (id: string) => {
+      auth.setActiveHousehold(id);
+      // reload the session under the new household, then land on Home fresh
+      load().then(() => router.replace("/"));
+    },
+    [load, router],
+  );
+
   const signOut = useCallback(() => {
-    auth.signOut();
-    load();
-    router.replace("/welcome");
+    (async () => {
+      await auth.signOut();
+      await load();
+      router.replace("/welcome");
+    })();
   }, [router, load]);
 
   // Guard: bounce signed-out users to onboarding, signed-in users away from
@@ -90,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const previewing = !!role && !!realRole && role !== realRole;
 
   return (
-    <AuthCtx.Provider value={{ session, role, realRole, previewRole: preview, loading, can, setPreviewRole, refresh: load, signOut }}>
+    <AuthCtx.Provider value={{ session, role, realRole, previewRole: preview, loading, can, setPreviewRole, households, switchHousehold, refresh: load, signOut }}>
       {previewing && (
         <div className="fixed left-1/2 top-0 z-40 flex w-full max-w-md -translate-x-1/2 items-center gap-2 bg-[#1e1b4b] px-4 py-1.5 text-[12px] font-bold text-white">
           <span className="flex-1">Previewing as {ROLE_LABEL[role!]} · read-only where restricted</span>

@@ -41,8 +41,8 @@ export default function ProfilesScreen() {
       <Header title="Profiles" />
       <div className="flex flex-col gap-3 px-5 pt-2">
         {loading && <p className="text-sm text-[#a3a2b4]">Loading…</p>}
-        {profiles.map((p, i) => {
-          const c = memberColor(i);
+        {profiles.map((p) => {
+          const c = memberColor(p.color_index);
           const n = count(p.id);
           const cls = "flex items-center gap-[13px] rounded-[18px] border border-[#efeef6] bg-white p-[14px] shadow-[0_4px_18px_rgba(30,27,75,0.05)]";
           const inner = (

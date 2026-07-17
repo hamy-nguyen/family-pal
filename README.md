@@ -29,7 +29,7 @@ photo(s) → compress → /api/ocr (Apple Vision) → /api/structure (local LLM)
 | OCR | Apple Vision via `ocrmac` (FastAPI, `ocr-server/`, port 8000) |
 | LLM | LM Studio · `gemma-4-e4b-it` (MLX) · OpenAI-compatible API, port 1234 |
 | Data | localStorage today; Supabase/Postgres schema ready for Phase 2 |
-| Images | client-side canvas compression; Cloudflare R2 wired for Phase 3 |
+| Images | client-side canvas compression; Supabase Storage (private, per-household) |
 
 ## Access model & roles
 
@@ -108,7 +108,7 @@ STRUCTURE_MODEL=gemma-4-e4b-it
   editable records, fees, multi-image capture.
 - **Phase 2a/2b — ✅ done.** Mock auth + household + co-management UI + role-based
   access control (owner/editor/viewer).
-- **Phase 2 — next.** Real Supabase magic-link auth + cloud sync (run `schema.sql`,
-  implement `SupabaseRepo` behind the existing `Repo` interface).
-- **Phase 3.** Cloudflare R2 for images (code wired; needs an account).
-- **Phase 4.** Deploy: frontend on Vercel, Mac AI reached via Cloudflare Tunnel.
+- **Phase 2 — next.** Real Supabase magic-link auth + cloud sync + images in
+  Supabase Storage (run `schema.sql`; `SupabaseAuth`/`SupabaseRepo` are scaffolded
+  behind the existing interfaces, activated when the env vars are present).
+- **Phase 3.** Deploy: frontend on Vercel, Mac AI reached via Cloudflare Tunnel.

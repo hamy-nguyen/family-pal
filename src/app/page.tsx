@@ -10,6 +10,7 @@ import { setPendingImages } from "@/lib/captureBuffer";
 import type { Profile, Visit } from "@/lib/types";
 import {
   categoryFor,
+  deaccent,
   fmtDate,
   fmtMonthYear,
   memberColor,
@@ -44,7 +45,7 @@ const visitWhen = (v: Visit) => v.visit_date || v.created_at;
 
 export default function RetrieveScreen() {
   const router = useRouter();
-  const { can } = useAuth();
+  const { can, households, session } = useAuth();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +72,7 @@ export default function RetrieveScreen() {
   }, [router]);
 
   const colorOf = (pid: string) =>
-    memberColor(profiles.findIndex((p) => p.id === pid));
+    memberColor(profiles.find((p) => p.id === pid)?.color_index ?? 0);
 
   async function del(id: string) {
     if (!confirm("Delete this record? This can't be undone.")) return;
@@ -100,18 +101,18 @@ export default function RetrieveScreen() {
     let list = visits;
     if (profileId !== "all") list = list.filter((v) => v.profile_id === profileId);
     if (q.trim()) {
-      const t = q.toLowerCase();
+      // accent-insensitive: "da day" matches "dạ dày", "viem" matches "viêm"
+      const t = deaccent(q);
       list = list.filter((v) =>
-        [
-          v.diagnosis,
-          v.clinic_location,
-          v.disease_process,
-          v.medications.map((m) => m.name).join(" "),
-          v.investigations.map((i) => i.conclusion).join(" "),
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(t)
+        deaccent(
+          [
+            v.diagnosis,
+            v.clinic_location,
+            v.disease_process,
+            v.medications.map((m) => m.name).join(" "),
+            v.investigations.map((i) => i.conclusion).join(" "),
+          ].join(" ")
+        ).includes(t)
       );
     }
     const sorted = [...list];
@@ -152,7 +153,7 @@ export default function RetrieveScreen() {
               {greeting}
             </div>
             <div className="mt-0.5 text-[23px] font-extrabold tracking-[-0.02em] text-[#1e1b4b]">
-              {FAMILY_NAME}
+              {households.find((h) => h.id === session?.household_id)?.name || FAMILY_NAME}
             </div>
           </div>
           <Link

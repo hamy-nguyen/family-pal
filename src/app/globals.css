@@ -11,6 +11,34 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Hover feedback for clickable things — desktop only.
+ * WHY @media (hover: hover): touch devices report no real hover, so gating here
+ * prevents the "sticky hover" bug where a tapped button stays highlighted on
+ * mobile. Element selectors keep specificity low, so any inline hover:/active:
+ * utility on a specific button still wins. Covers buttons, links, the label-based
+ * file-input triggers (FAB, "Add documents"), and anything with role="button". */
+@media (hover: hover) {
+  button:not(:disabled),
+  a[href],
+  label.cursor-pointer,
+  [role="button"] {
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  button:not(:disabled):hover,
+  a[href]:hover,
+  label.cursor-pointer:hover,
+  [role="button"]:hover {
+    filter: brightness(0.96);
+  }
+  button:not(:disabled):active,
+  a[href]:active,
+  label.cursor-pointer:active,
+  [role="button"]:active {
+    transform: translateY(1px);
+  }
+}
+
 /* hide scrollbars on horizontal scroll rows (member avatars) */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

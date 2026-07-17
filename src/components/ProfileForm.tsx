@@ -14,6 +14,9 @@ const REL: { key: Relationship; label: string }[] = [
   { key: "other", label: "Other" },
 ];
 
+// ABO groups only — Rh +/- omitted per product decision.
+const BLOOD_TYPES = ["A", "B", "AB", "O"];
+
 const INP =
   "w-full rounded-[13px] border border-[#ececf4] bg-white px-[13px] py-3 text-[14px] font-semibold text-[#1e1b4b] shadow-[0_2px_8px_rgba(30,27,75,0.03)] placeholder:font-medium placeholder:text-[#b4b3c2] focus:outline-none";
 
@@ -31,7 +34,6 @@ export function ProfileForm({
   onDelete?: () => Promise<void> | void;
 }) {
   const [p, setP] = useState<ProfileDraft>(initial);
-  const [showMed, setShowMed] = useState(false);
   const [saving, setSaving] = useState(false);
   const c = MEMBER_COLORS[p.color_index % MEMBER_COLORS.length];
 
@@ -129,36 +131,43 @@ export function ProfileForm({
         </label>
       </div>
 
-      {/* medical details (optional, collapsible) */}
-      <button
-        onClick={() => setShowMed((s) => !s)}
-        className="flex items-center justify-between rounded-[14px] border border-[#efeef6] bg-white px-4 py-3 text-[13px] font-semibold text-[#7b7a8a] shadow-[0_2px_8px_rgba(30,27,75,0.03)]"
-      >
-        Medical details · allergies, blood type…
-        <span className="text-[#c4c3d0]">{showMed ? "▲" : "▼"}</span>
-      </button>
-      {showMed && (
-        <div className="flex flex-col gap-3">
-          <input
+      {/* medical details — shown inline, all optional */}
+      <div className="flex flex-col gap-3">
+        <span className="text-[12px] font-semibold text-[#8d8c9c]">Medical details · optional</span>
+        <label className="block">
+          <span className="mb-1.5 block text-[11.5px] font-medium text-[#9b9aaa]">Blood type</span>
+          <select
             className={INP}
-            placeholder="Blood type (e.g. O+)"
             value={p.blood_type ?? ""}
-            onChange={(e) => set("blood_type", e.target.value)}
-          />
+            onChange={(e) => set("blood_type", e.target.value || undefined)}
+          >
+            <option value="">—</option>
+            {BLOOD_TYPES.map((bt) => (
+              <option key={bt} value={bt}>
+                {bt}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-[11.5px] font-medium text-[#9b9aaa]">Allergies</span>
           <input
             className={INP}
-            placeholder="Allergies"
+            placeholder="e.g. Penicillin, seafood"
             value={p.allergies ?? ""}
             onChange={(e) => set("allergies", e.target.value)}
           />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-[11.5px] font-medium text-[#9b9aaa]">Chronic conditions</span>
           <input
             className={INP}
-            placeholder="Chronic conditions"
+            placeholder="e.g. Asthma, hypertension"
             value={p.chronic_conditions ?? ""}
             onChange={(e) => set("chronic_conditions", e.target.value)}
           />
-        </div>
-      )}
+        </label>
+      </div>
 
       {onDelete && (
         <button

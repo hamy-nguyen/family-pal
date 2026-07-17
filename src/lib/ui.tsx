@@ -18,6 +18,16 @@ export function memberColor(index: number): MemberColor {
   return MEMBER_COLORS[(index < 0 ? 0 : index) % MEMBER_COLORS.length];
 }
 
+// Accent-insensitive normalizer for search: strips Vietnamese diacritics and
+// folds đ/Đ (which NFD doesn't decompose) so "viem" matches "viêm", "da day"
+// matches "dạ dày", etc. Lowercased for case-insensitivity.
+export const deaccent = (s: string) =>
+  (s || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // combining diacritical marks
+    .replace(/[đĐ]/g, "d")
+    .toLowerCase();
+
 // ---------- dates ----------
 export function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {

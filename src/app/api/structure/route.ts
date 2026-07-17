@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import type { StructuredResult } from "@/lib/types";
 
 // Structuring step: OCR text + document photos -> a full structured record
 // (medical record fields + drug list + supplement list + paraclinical results).
@@ -99,13 +98,6 @@ Văn bản OCR:
 
 `;
 
-const EMPTY: StructuredResult = {
-  diagnosis: "", clinic_location: "", visit_date: "", disease_process: "",
-  doctor: "", icd_code: "", treatment_note: "",
-  consultation_fee: "", medication_fee: "", insurance: "",
-  medications: [], supplements: [], investigations: [],
-};
-
 export async function POST(req: Request) {
   const { text, images } = await req.json();
   const imgs: string[] = (images ?? []).filter(Boolean);
@@ -125,11 +117,14 @@ export async function POST(req: Request) {
       }),
       signal: AbortSignal.timeout(180000),
     });
-    if (!r.ok) throw new Error(`LM Studio ${r.status}: ${await r.text()}`);
+    if (!r.ok) throw new Error(`LM Studio ${r.status}: ${(await r.text()).slice(0, 500)}`);
     const data = await r.json();
     return NextResponse.json(JSON.parse(data.choices[0].message.content));
   } catch (e) {
-    console.warn("structure failed, empty draft:", e);
-    return NextResponse.json(EMPTY);
+    const message = (e as Error).message;
+    // Centralized + no longer swallowed: log here and return a real error (was
+    // silently returning an empty draft with 200).
+    console.error("[structure] failed:", message);
+    return NextResponse.json({ error: `Structuring failed: ${message}` }, { status: 502 });
   }
 }

@@ -26,18 +26,22 @@ export async function extractImages(
   onStage?.("ocr");
   let combined = "";
   for (const image of list) {
-    const { text } = await fetch("/api/ocr", {
+    const res = await fetch("/api/ocr", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ image }),
-    }).then((r) => r.json());
-    combined += (text ?? "") + "\n";
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `OCR failed (${res.status})`);
+    combined += (data.text ?? "") + "\n";
   }
   onStage?.("structure");
-  const result: StructuredResult = await fetch("/api/structure", {
+  const sres = await fetch("/api/structure", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text: combined, images: list }),
-  }).then((r) => r.json());
-  return { text: combined, result };
+  });
+  const sdata = await sres.json();
+  if (!sres.ok || sdata.error) throw new Error(sdata.error || `Structuring failed (${sres.status})`);
+  return { text: combined, result: sdata as StructuredResult };
 }

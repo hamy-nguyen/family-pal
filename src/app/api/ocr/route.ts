@@ -32,13 +32,17 @@ export async function POST(req: Request) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ image }),
     });
-    if (!r.ok) throw new Error(`OCR server ${r.status}`);
+    if (!r.ok) {
+      // keep the upstream (Apple Vision / FastAPI) error body — the useful part
+      const body = await r.text().catch(() => "");
+      throw new Error(`OCR server ${r.status}: ${body.slice(0, 500)}`);
+    }
     const { text } = await r.json();
     return NextResponse.json({ text });
   } catch (e) {
-    return NextResponse.json(
-      { error: `OCR failed: ${(e as Error).message}` },
-      { status: 502 }
-    );
+    const message = (e as Error).message;
+    // Centralized: every OCR failure is logged here, in the Next server output.
+    console.error("[ocr] failed:", message);
+    return NextResponse.json({ error: `OCR failed: ${message}` }, { status: 502 });
   }
 }

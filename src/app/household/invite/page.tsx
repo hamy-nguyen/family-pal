@@ -17,9 +17,9 @@ export default function InviteScreen() {
 
   const valid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
 
-  function sendInvite() {
+  async function sendInvite() {
     if (!valid) return;
-    const inv = auth.invite(email, role);
+    const inv = await auth.invite(email, role);
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     setLink(`${origin}/join/${inv.token}`);
   }

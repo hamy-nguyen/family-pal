@@ -20,25 +20,28 @@ export default function HouseholdScreen() {
   const canManage = can("members:manage"); // effective (preview-aware)
   const canRename = can("household:rename");
 
-  function reload() {
-    setName(auth.getHousehold()?.name ?? "");
-    setMembers(auth.listMembers());
+  async function reload() {
+    const [h, m] = await Promise.all([auth.getHousehold(), auth.listMembers()]);
+    setName(h?.name ?? "");
+    setMembers(m);
   }
-  useEffect(reload, []);
+  useEffect(() => {
+    void reload();
+  }, []);
 
-  function saveName() {
-    auth.updateHouseholdName(name);
+  async function saveName() {
+    await auth.updateHouseholdName(name);
     setEditingName(false);
-    reload();
+    void reload();
   }
-  function setRole(id: string, role: Role) {
-    auth.setMemberRole(id, role);
-    reload();
+  async function setRole(id: string, role: Role) {
+    await auth.setMemberRole(id, role);
+    void reload();
   }
-  function remove(m: Member) {
+  async function remove(m: Member) {
     if (!confirm(`Remove ${m.name} from this family?`)) return;
-    auth.removeMember(m.id);
-    reload();
+    await auth.removeMember(m.id);
+    void reload();
   }
 
   return (

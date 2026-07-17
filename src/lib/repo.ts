@@ -5,14 +5,16 @@
 import type { Profile, Visit, NewVisitInput } from "./types";
 import { auth } from "./auth";
 import { can, type Capability } from "./permissions";
+import { supabaseConfigured } from "./supabase";
+import { SupabaseRepo } from "./repo.supabase";
 
 export type NewProfileInput = Omit<Profile, "id" | "created_at">;
 
 // Defense in depth: the UI hides what you can't do, but every write also checks
 // the acting role here so a viewer can't mutate by any path. Phase 2: the same
 // guarantee comes from Postgres RLS (supabase/schema.sql).
-function assertCan(cap: Capability) {
-  if (!can(auth.effectiveRole(), cap)) {
+async function assertCan(cap: Capability) {
+  if (!can(await auth.effectiveRole(), cap)) {
     throw new Error(`Not permitted: ${cap}`);
   }
 }
@@ -60,7 +62,7 @@ class LocalRepo implements Repo {
     return (await this.listProfiles()).find((p) => p.id === id) ?? null;
   }
   async createProfile(input: NewProfileInput): Promise<Profile> {
-    assertCan("profiles:manage");
+    await assertCan("profiles:manage");
     const all = await this.listProfiles();
     const profile: Profile = {
       ...input,
@@ -73,7 +75,7 @@ class LocalRepo implements Repo {
     return profile;
   }
   async updateProfile(p: Profile): Promise<Profile> {
-    assertCan("profiles:manage");
+    await assertCan("profiles:manage");
     const all = await this.listProfiles();
     this.write(
       LS_PROFILES,
@@ -82,7 +84,7 @@ class LocalRepo implements Repo {
     return p;
   }
   async deleteProfile(id: string): Promise<void> {
-    assertCan("profiles:manage");
+    await assertCan("profiles:manage");
     this.write(
       LS_PROFILES,
       (await this.listProfiles()).filter((p) => p.id !== id)
@@ -113,7 +115,7 @@ class LocalRepo implements Repo {
     return v ? this.norm(v) : null;
   }
   async saveVisit(input: NewVisitInput): Promise<Visit> {
-    assertCan("records:create");
+    await assertCan("records:create");
     const profiles = await this.listProfiles();
     const withIds = <T extends { id?: string }>(rows: T[]) =>
       (rows ?? []).map((r) => ({ ...r, id: r.id ?? uid() }));
@@ -131,7 +133,7 @@ class LocalRepo implements Repo {
     return visit;
   }
   async updateVisit(v: Visit): Promise<Visit> {
-    assertCan("records:edit");
+    await assertCan("records:edit");
     const profiles = await this.listProfiles();
     const next = this.norm({
       ...v,
@@ -144,7 +146,7 @@ class LocalRepo implements Repo {
     return next;
   }
   async deleteVisit(id: string): Promise<void> {
-    assertCan("records:delete");
+    await assertCan("records:delete");
     this.write(
       LS_VISITS,
       (await this.listVisits()).filter((v) => v.id !== id)
@@ -152,10 +154,11 @@ class LocalRepo implements Repo {
   }
 }
 
-// ---- backend selection (Phase 2 will add SupabaseRepo here) ----
+// ---- backend selection ----
+// Supabase when configured (RLS is the real enforcement), else the local mock.
 let _repo: Repo | null = null;
 export function repo(): Repo {
   if (_repo) return _repo;
-  _repo = new LocalRepo();
+  _repo = supabaseConfigured ? new SupabaseRepo() : new LocalRepo();
   return _repo;
 }

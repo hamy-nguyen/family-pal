@@ -1,11 +1,14 @@
-// Identity layer — MOCK for Phase 1, but shaped like the real thing so Phase 2
-// swaps in Supabase behind the same surface (mirrors supabase/schema.sql:
-// households, household_members, invitations).
+// Identity layer. Two implementations behind ONE async Auth interface:
+//   • LocalAuth   — mock on localStorage (this file), used when Supabase is unset.
+//   • SupabaseAuth — real magic-link + DB (auth.supabase.ts), used when configured.
+// `auth` is picked by `supabaseConfigured`; screens only ever `await auth.*`.
 //
 // Two distinct "people" concepts, kept separate on purpose:
 //   • Member  = a CAREGIVER who can sign in and co-manage (owner/editor/viewer).
 //   • Profile = a PATIENT whose records are tracked (lives in repo.ts).
-// Co-management = multiple members sharing one household's profiles + visits.
+import type { Auth } from "./authInterface";
+import { SupabaseAuth } from "./auth.supabase";
+import { supabaseConfigured } from "./supabase";
 
 export type Role = "owner" | "editor" | "viewer";
 
@@ -38,25 +41,17 @@ type Store = {
   members: Member[];
   invitations: Invitation[];
   sessionActive: boolean;
-  pendingEmail?: string; // email awaiting the "magic link" tap
-  previewRole?: Role; // owner-only "view as" override (demo aid)
+  previewRole?: Role;
 };
 
 // Privilege order — used to keep preview a downgrade, never an escalation.
 const RANK: Record<Role, number> = { owner: 3, editor: 2, viewer: 1 };
 
 const KEY = "family_pal_identity";
-const EMPTY: Store = {
-  user: null,
-  household: null,
-  members: [],
-  invitations: [],
-  sessionActive: false,
-};
+const EMPTY: Store = { user: null, household: null, members: [], invitations: [], sessionActive: false };
 
 const uid = () =>
-  globalThis.crypto?.randomUUID?.() ??
-  `${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
+  globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
 
 function read(): Store {
   if (typeof window === "undefined") return EMPTY;
@@ -71,161 +66,129 @@ function write(s: Store) {
   if (typeof window !== "undefined") window.localStorage.setItem(KEY, JSON.stringify(s));
 }
 
-// Default household name — frictionless: no naming step at onboarding, editable
-// later in Household settings. Personalized once we know the caregiver's name.
 const defaultHouseholdName = (email: string) => {
   const who = (email.split("@")[0] || "My").replace(/[._-]+/g, " ").trim();
   const cap = who.charAt(0).toUpperCase() + who.slice(1);
   return `${cap}'s Family`;
 };
 
-export const auth = {
-  getSession(): Session {
+// Mock identity on localStorage — same behavior as before, now async to match the
+// interface Supabase needs. Preview is stored raw; effectiveRole clamps it so it
+// can only ever downgrade (never grant more power than the real role).
+class LocalAuth implements Auth {
+  async getSession(): Promise<Session> {
     const s = read();
-    return s.sessionActive && s.user && s.household
-      ? { user: s.user, household_id: s.household.id }
-      : null;
-  },
+    return s.sessionActive && s.user && s.household ? { user: s.user, household_id: s.household.id } : null;
+  }
 
-  // "Send magic link" — mock just remembers which email is signing in.
-  requestSignIn(email: string) {
+  // Mock ignores the password (no credential store) — it just establishes a
+  // session and creates the user + household on first use, like the real signup.
+  async signIn(email: string, _password: string): Promise<void> {
     const s = read();
-    write({ ...s, pendingEmail: email.trim().toLowerCase() });
-  },
-  pendingEmail(): string | undefined {
-    return read().pendingEmail;
-  },
-
-  // "Tap the magic link" — first time creates the user + their household (owner).
-  completeSignIn(email?: string): Session {
-    const s = read();
-    const addr = (email ?? s.pendingEmail ?? "").trim().toLowerCase();
-    if (!addr) return null;
-
+    const addr = email.trim().toLowerCase();
     let { user, household, members } = s;
     if (!user) {
       user = { id: uid(), email: addr };
       household = { id: uid(), name: defaultHouseholdName(addr) };
-      members = [
-        { id: uid(), household_id: household.id, user_id: user.id, name: addr, email: addr, role: "owner", status: "active" },
-      ];
+      members = [{ id: uid(), household_id: household.id, user_id: user.id, name: addr, email: addr, role: "owner", status: "active" }];
     }
-    const next: Store = { ...s, user, household, members, sessionActive: true, pendingEmail: undefined };
-    write(next);
-    return auth.getSession();
-  },
+    write({ ...s, user, household, members, sessionActive: true });
+  }
+  async signUp(email: string, password: string): Promise<void> {
+    return this.signIn(email, password);
+  }
+  async signOut(): Promise<void> {
+    write({ ...read(), sessionActive: false, previewRole: undefined });
+  }
+  // Mock has no external auth stream; nothing to subscribe to.
+  onAuthChange(_cb: () => void): () => void {
+    return () => {};
+  }
 
-  signOut() {
-    // Keep the data; just drop the active session (sign back in restores it).
-    write({ ...read(), sessionActive: false, pendingEmail: undefined, previewRole: undefined });
-  },
-
-  // The acting caregiver's REAL role (from their member row).
-  currentRole(): Role | null {
+  async currentRole(): Promise<Role | null> {
     const s = read();
     if (!s.sessionActive || !s.user) return null;
     return s.members.find((m) => m.user_id === s.user!.id)?.role ?? null;
-  },
+  }
   previewRole(): Role | null {
     return read().previewRole ?? null;
-  },
-  // Preview is a demo aid: only the owner may use it, and only to see a role at
-  // or below their own — you can never grant yourself more power than you have.
-  setPreviewRole(role: Role | null) {
-    const s = read();
-    const real = auth.currentRole();
-    const ok = !!role && !!real && RANK[role] <= RANK[real];
-    write({ ...s, previewRole: ok ? role! : undefined });
-  },
-  // The role actually in force = real role, optionally downgraded by preview.
-  effectiveRole(): Role | null {
-    const real = auth.currentRole();
+  }
+  setPreviewRole(role: Role | null): void {
+    write({ ...read(), previewRole: role ?? undefined });
+  }
+  async effectiveRole(): Promise<Role | null> {
+    const real = await this.currentRole();
     if (!real) return null;
     const p = read().previewRole;
     return p && RANK[p] <= RANK[real] ? p : real;
-  },
+  }
 
-  getHousehold(): Household | null {
+  async getHousehold(): Promise<Household | null> {
     return read().household;
-  },
-  updateHouseholdName(name: string) {
+  }
+  async updateHouseholdName(name: string): Promise<void> {
     const s = read();
     if (!s.household) return;
     write({ ...s, household: { ...s.household, name: name.trim() || s.household.name } });
-  },
-
-  // Called after the "self" profile is created: give the owner caregiver a real
-  // name (until now it was their email).
-  setOwnerName(name: string) {
+  }
+  async setOwnerName(name: string): Promise<void> {
     const s = read();
     if (!s.user) return;
     const user = { ...s.user, name };
-    const members = s.members.map((m) =>
-      m.user_id === user.id ? { ...m, name } : m
-    );
-    write({ ...s, user, members });
-  },
+    write({ ...s, user, members: s.members.map((m) => (m.user_id === user.id ? { ...m, name } : m)) });
+  }
 
-  listMembers(): Member[] {
+  // Mock has a single household; switching is a no-op.
+  async listHouseholds(): Promise<Array<{ id: string; name: string; role: Role }>> {
+    const s = read();
+    return s.household ? [{ id: s.household.id, name: s.household.name, role: "owner" }] : [];
+  }
+  activeHouseholdId(): string | null {
+    return read().household?.id ?? null;
+  }
+  setActiveHousehold(_id: string): void {
+    /* single household — nothing to switch */
+  }
+
+  async listMembers(): Promise<Member[]> {
     return read().members;
-  },
-  listInvitations(): Invitation[] {
+  }
+  async listInvitations(): Promise<Invitation[]> {
     return read().invitations.filter((i) => i.status === "pending");
-  },
-
-  invite(email: string, role: Exclude<Role, "owner">): Invitation {
+  }
+  async invite(email: string, role: Exclude<Role, "owner">): Promise<Invitation> {
     const s = read();
     if (!s.household) throw new Error("no household");
     const addr = email.trim().toLowerCase();
     const invitation: Invitation = {
-      id: uid(),
-      household_id: s.household.id,
-      email: addr,
-      role,
-      token: uid(),
-      status: "pending",
-      created_at: new Date().toISOString(),
+      id: uid(), household_id: s.household.id, email: addr, role, token: uid(),
+      status: "pending", created_at: new Date().toISOString(),
     };
-    // Surface the invitee in the roster immediately as a pending member.
-    const member: Member = {
-      id: uid(),
-      household_id: s.household.id,
-      name: addr,
-      email: addr,
-      role,
-      status: "pending",
-    };
+    const member: Member = { id: uid(), household_id: s.household.id, name: addr, email: addr, role, status: "pending" };
     write({ ...s, invitations: [...s.invitations, invitation], members: [...s.members, member] });
     return invitation;
-  },
-
-  getInvitation(token: string): (Invitation & { household_name: string }) | null {
+  }
+  async getInvitation(token: string): Promise<(Invitation & { household_name: string }) | null> {
     const s = read();
     const inv = s.invitations.find((i) => i.token === token);
     if (!inv || !s.household) return null;
     return { ...inv, household_name: s.household.name };
-  },
-
-  // Demo-accept the invite loop on this device (Phase 2: the invitee does this
-  // on their own device after real magic-link sign-in).
-  acceptInvite(token: string) {
+  }
+  async acceptInvite(token: string): Promise<void> {
     const s = read();
     const inv = s.invitations.find((i) => i.token === token && i.status === "pending");
     if (!inv) return;
     write({
       ...s,
       invitations: s.invitations.map((i) => (i.id === inv.id ? { ...i, status: "accepted" as const } : i)),
-      members: s.members.map((m) =>
-        m.email === inv.email && m.status === "pending" ? { ...m, status: "active" as const } : m
-      ),
+      members: s.members.map((m) => (m.email === inv.email && m.status === "pending" ? { ...m, status: "active" as const } : m)),
     });
-  },
-
-  setMemberRole(id: string, role: Role) {
+  }
+  async setMemberRole(id: string, role: Role): Promise<void> {
     const s = read();
     write({ ...s, members: s.members.map((m) => (m.id === id ? { ...m, role } : m)) });
-  },
-  removeMember(id: string) {
+  }
+  async removeMember(id: string): Promise<void> {
     const s = read();
     const m = s.members.find((x) => x.id === id);
     write({
@@ -233,5 +196,8 @@ export const auth = {
       members: s.members.filter((x) => x.id !== id),
       invitations: m ? s.invitations.filter((i) => !(i.email === m.email && i.status === "pending")) : s.invitations,
     });
-  },
-};
+  }
+}
+
+// Backend selection — the whole app flips here based on env.
+export const auth: Auth = supabaseConfigured ? new SupabaseAuth() : new LocalAuth();

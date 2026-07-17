@@ -34,6 +34,10 @@ create table if not exists household_members (
   primary key (household_id, user_id)
 );
 create index if not exists idx_hm_user on household_members (user_id);
+-- Caregiver display info, populated on signup / invite-accept, so the roster can
+-- show who has access WITHOUT the client reading the protected auth.users table.
+alter table household_members add column if not exists email text;
+alter table household_members add column if not exists name  text;
 
 create table if not exists profiles (
   id                 uuid primary key default gen_random_uuid(),
@@ -60,7 +64,7 @@ create table if not exists visits (
   id                 uuid primary key default gen_random_uuid(),
   household_id       uuid not null references households (id) on delete cascade,
   profile_id         uuid not null references profiles (id) on delete cascade,
-  created_by         uuid references auth.users (id),
+  created_by         uuid references auth.users (id) on delete set null,
 
   -- required
   visit_date         date,                       -- Ngày khám
@@ -159,8 +163,8 @@ create table if not exists invitations (
   token        uuid not null default gen_random_uuid(),
   status       text not null default 'pending'
                check (status in ('pending','accepted','revoked','expired')),
-  invited_by   uuid references auth.users (id),
-  accepted_by  uuid references auth.users (id),
+  invited_by   uuid references auth.users (id) on delete set null,
+  accepted_by  uuid references auth.users (id) on delete set null,
   accepted_at  timestamptz,
   expires_at   timestamptz not null default (now() + interval '14 days'),
   created_at   timestamptz not null default now()
@@ -203,7 +207,8 @@ returns trigger language plpgsql security definer set search_path = public as $$
 declare hid uuid;
 begin
   insert into households default values returning id into hid;
-  insert into household_members (household_id, user_id, role) values (hid, new.id, 'owner');
+  insert into household_members (household_id, user_id, role, email, name)
+    values (hid, new.id, 'owner', new.email, split_part(new.email, '@', 1));
   return new;
 end $$;
 drop trigger if exists on_auth_user_created on auth.users;
@@ -212,20 +217,133 @@ create trigger on_auth_user_created after insert on auth.users
 
 create or replace function accept_invitation(invite_token uuid)
 returns uuid language plpgsql security definer set search_path = public as $$
-declare inv invitations;
+declare inv invitations; uemail text;
 begin
+  select email into uemail from auth.users where id = auth.uid();
   select * into inv from invitations where token = invite_token and status = 'pending';
   if inv.id is null then raise exception 'invalid or already-used invitation'; end if;
   if inv.expires_at < now() then
     update invitations set status = 'expired' where id = inv.id;
     raise exception 'invitation expired';
   end if;
-  insert into household_members (household_id, user_id, role)
-    values (inv.household_id, auth.uid(), inv.role)
+  insert into household_members (household_id, user_id, role, email, name)
+    values (inv.household_id, auth.uid(), inv.role, uemail, split_part(uemail, '@', 1))
     on conflict (household_id, user_id) do nothing;
   update invitations set status = 'accepted', accepted_by = auth.uid(), accepted_at = now()
     where id = inv.id;
   return inv.household_id;
+end $$;
+
+-- Read an invitation BEFORE the invitee is a member (RLS would otherwise hide it).
+-- SECURITY DEFINER: returns only the role + household name for a valid token.
+create or replace function invitation_preview(invite_token uuid)
+returns table (role text, household_name text)
+language sql security definer stable set search_path = public as $$
+  select i.role, h.name
+  from invitations i join households h on h.id = i.household_id
+  where i.token = invite_token and i.status = 'pending'
+$$;
+
+-- Atomic visit write: the visit row + all its child rows in ONE transaction, so a
+-- half-saved record can't exist. Role is checked here too (owner/editor only).
+-- `p` is the whole visit as JSON (same shape the client already builds).
+create or replace function save_visit(p jsonb)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare vid uuid; hid uuid; item jsonb;
+begin
+  select household_id into hid from profiles where id = (p->>'profile_id')::uuid;
+  if hid is null then raise exception 'profile not found'; end if;
+  if auth_household_role(hid) not in ('owner','editor') then raise exception 'not permitted'; end if;
+
+  insert into visits (household_id, profile_id, created_by, visit_date, clinic_location, diagnosis,
+    disease_process, doctor, icd_code, treatment_note, treatment_location, follow_up_date, vitals,
+    consultation_fee, medication_fee, insurance, note, raw_text)
+  values (hid, (p->>'profile_id')::uuid, auth.uid(),
+    nullif(p->>'visit_date','')::date, coalesce(p->>'clinic_location',''), coalesce(p->>'diagnosis',''),
+    coalesce(p->>'disease_process',''), coalesce(p->>'doctor',''), coalesce(p->>'icd_code',''),
+    coalesce(p->>'treatment_note',''), coalesce(p->>'treatment_location',''),
+    nullif(p->>'follow_up_date','')::date, coalesce(p->'vitals','{}'::jsonb),
+    coalesce(p->>'consultation_fee',''), coalesce(p->>'medication_fee',''),
+    coalesce(p->>'insurance',''), coalesce(p->>'note',''), p->>'raw_text')
+  returning id into vid;
+
+  for item in select jsonb_array_elements(coalesce(p->'medications','[]'::jsonb)) loop
+    insert into medications (visit_id, name, strength, quantity, unit, usage, notes)
+    values (vid, coalesce(item->>'name',''), coalesce(item->>'strength',''), coalesce(item->>'quantity',''),
+            coalesce(item->>'unit',''), coalesce(item->>'usage',''), coalesce(item->>'notes',''));
+  end loop;
+  for item in select jsonb_array_elements(coalesce(p->'supplements','[]'::jsonb)) loop
+    insert into supplements (visit_id, name, quantity, usage, notes)
+    values (vid, coalesce(item->>'name',''), coalesce(item->>'quantity',''),
+            coalesce(item->>'usage',''), coalesce(item->>'notes',''));
+  end loop;
+  for item in select jsonb_array_elements(coalesce(p->'investigations','[]'::jsonb)) loop
+    insert into investigations (visit_id, type, title, conclusion, findings, image_url, performed_at)
+    values (vid, coalesce(item->>'type','other'), coalesce(item->>'title',''), coalesce(item->>'conclusion',''),
+            coalesce(item->>'findings',''), item->>'image_url', nullif(item->>'performed_at','')::date);
+  end loop;
+  for item in select jsonb_array_elements(coalesce(p->'attachments','[]'::jsonb)) loop
+    insert into attachments (visit_id, kind, image_url, caption)
+    values (vid, coalesce(item->>'kind','other'), coalesce(item->>'image_url',''), coalesce(item->>'caption',''));
+  end loop;
+
+  return vid;
+end $$;
+
+-- Atomic visit update: replace the visit's fields and rewrite its children.
+create or replace function update_visit(p jsonb)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare vid uuid; hid uuid; item jsonb;
+begin
+  vid := (p->>'id')::uuid;
+  select household_id into hid from visits where id = vid;
+  if hid is null then raise exception 'visit not found'; end if;
+  if auth_household_role(hid) not in ('owner','editor') then raise exception 'not permitted'; end if;
+
+  update visits set
+    profile_id = (p->>'profile_id')::uuid,
+    visit_date = nullif(p->>'visit_date','')::date,
+    clinic_location = coalesce(p->>'clinic_location',''),
+    diagnosis = coalesce(p->>'diagnosis',''),
+    disease_process = coalesce(p->>'disease_process',''),
+    doctor = coalesce(p->>'doctor',''),
+    icd_code = coalesce(p->>'icd_code',''),
+    treatment_note = coalesce(p->>'treatment_note',''),
+    treatment_location = coalesce(p->>'treatment_location',''),
+    follow_up_date = nullif(p->>'follow_up_date','')::date,
+    vitals = coalesce(p->'vitals','{}'::jsonb),
+    consultation_fee = coalesce(p->>'consultation_fee',''),
+    medication_fee = coalesce(p->>'medication_fee',''),
+    insurance = coalesce(p->>'insurance',''),
+    note = coalesce(p->>'note','')
+  where id = vid;
+
+  delete from medications    where visit_id = vid;
+  delete from supplements    where visit_id = vid;
+  delete from investigations where visit_id = vid;
+  delete from attachments    where visit_id = vid;
+
+  for item in select jsonb_array_elements(coalesce(p->'medications','[]'::jsonb)) loop
+    insert into medications (visit_id, name, strength, quantity, unit, usage, notes)
+    values (vid, coalesce(item->>'name',''), coalesce(item->>'strength',''), coalesce(item->>'quantity',''),
+            coalesce(item->>'unit',''), coalesce(item->>'usage',''), coalesce(item->>'notes',''));
+  end loop;
+  for item in select jsonb_array_elements(coalesce(p->'supplements','[]'::jsonb)) loop
+    insert into supplements (visit_id, name, quantity, usage, notes)
+    values (vid, coalesce(item->>'name',''), coalesce(item->>'quantity',''),
+            coalesce(item->>'usage',''), coalesce(item->>'notes',''));
+  end loop;
+  for item in select jsonb_array_elements(coalesce(p->'investigations','[]'::jsonb)) loop
+    insert into investigations (visit_id, type, title, conclusion, findings, image_url, performed_at)
+    values (vid, coalesce(item->>'type','other'), coalesce(item->>'title',''), coalesce(item->>'conclusion',''),
+            coalesce(item->>'findings',''), item->>'image_url', nullif(item->>'performed_at','')::date);
+  end loop;
+  for item in select jsonb_array_elements(coalesce(p->'attachments','[]'::jsonb)) loop
+    insert into attachments (visit_id, kind, image_url, caption)
+    values (vid, coalesce(item->>'kind','other'), coalesce(item->>'image_url',''), coalesce(item->>'caption',''));
+  end loop;
+
+  return vid;
 end $$;
 
 -- ---------- Row Level Security ----------
@@ -278,3 +396,33 @@ create policy inv_select on invitations for select using (household_id in (selec
 create policy inv_write on invitations for all
   using (auth_household_role(household_id) in ('owner','editor'))
   with check (auth_household_role(household_id) in ('owner','editor'));
+
+-- ---------- Storage: document images (private bucket, per-household) ----------
+-- Images live in Supabase Storage, not the 500MB Postgres DB. The object path is
+-- `${household_id}/${uuid}.jpg`; policies below use that first path segment so a
+-- caregiver can only touch their own household's images. Reads are via short-lived
+-- signed URLs (the bucket is private — nothing is publicly reachable).
+insert into storage.buckets (id, name, public)
+values ('visit-images', 'visit-images', false)
+on conflict (id) do nothing;
+
+create policy "visit_images_read" on storage.objects for select using (
+  bucket_id = 'visit-images'
+  and (storage.foldername(name))[1] in (
+    select household_id::text from household_members where user_id = auth.uid()
+  )
+);
+create policy "visit_images_write" on storage.objects for insert with check (
+  bucket_id = 'visit-images'
+  and (storage.foldername(name))[1] in (
+    select household_id::text from household_members
+    where user_id = auth.uid() and role in ('owner','editor')
+  )
+);
+create policy "visit_images_delete" on storage.objects for delete using (
+  bucket_id = 'visit-images'
+  and (storage.foldername(name))[1] in (
+    select household_id::text from household_members
+    where user_id = auth.uid() and role in ('owner','editor')
+  )
+);

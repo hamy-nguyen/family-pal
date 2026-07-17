@@ -4,13 +4,18 @@
 // in repo.ts that uses this client when env vars are present.
 import { createBrowserClient } from "@supabase/ssr";
 
+// Accept either the newer "publishable" key name (sb_publishable_…) or the legacy
+// "anon" name — both are the browser-safe key and are drop-in equivalents for the
+// client. The SECRET/service key must never appear here (it bypasses RLS).
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const key =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabaseConfigured = Boolean(url && anon);
+export const supabaseConfigured = Boolean(url && key);
 
 export function supabaseClient() {
   if (!supabaseConfigured)
     throw new Error("Supabase env not set — using localStorage backend.");
-  return createBrowserClient(url!, anon!);
+  return createBrowserClient(url!, key!);
 }

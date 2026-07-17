@@ -35,7 +35,7 @@ export default function VisitDetail() {
   if (!visit) return <p className="p-6 text-sm text-[#a3a2b4]">Not found.</p>;
 
   const cat = categoryFor(visit.diagnosis);
-  const color = memberColor(profiles.findIndex((p) => p.id === visit.profile_id));
+  const color = memberColor(profiles.find((p) => p.id === visit.profile_id)?.color_index ?? 0);
   const cons = parseMoney(visit.consultation_fee);
   const medf = parseMoney(visit.medication_fee);
   const total = cons + medf;

@@ -48,16 +48,6 @@ export default function EditProfileScreen() {
             }
             router.back();
           }}
-          onDelete={
-            isNew
-              ? undefined
-              : async () => {
-                  if (confirm("Delete this profile and all its records?")) {
-                    await repo().deleteProfile(id);
-                    router.push("/profiles");
-                  }
-                }
-          }
         />
       </div>
     </main>

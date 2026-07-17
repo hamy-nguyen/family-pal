@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { repo } from "@/lib/repo";
 import { useAuth } from "@/components/AuthProvider";
+import { supabaseConfigured } from "@/lib/supabase";
+import { uploadImages } from "@/lib/uploadImage";
 import { compressImage } from "@/lib/compress";
 import { takePendingImages } from "@/lib/captureBuffer";
 import { Header } from "@/components/Header";
@@ -31,6 +33,7 @@ export default function CaptureScreen() {
   const [rawText, setRawText] = useState("");
   const [step, setStep] = useState<Step>("documents");
   const [stage, setStage] = useState<Stage>("ocr");
+  const [error, setError] = useState<string>();
 
   // Viewers can't create records — bounce anyone who reaches this by URL.
   useEffect(() => {
@@ -61,24 +64,29 @@ export default function CaptureScreen() {
   async function extractFrom(imgs: string[]) {
     const list = imgs.filter(Boolean);
     if (list.length === 0) return;
+    setError(undefined);
+    setStage("ocr");
     setStep("extracting");
     try {
       // Same pipeline + merge rule the review form uses for "add a page" re-reads.
       const { text, result } = await extractImages(list, setStage);
       setRawText(text);
       setValue((v) => mergeExtraction(v, result));
-    } catch {
-      /* leave for manual entry */
+      setStep("review");
+    } catch (e) {
+      // Not swallowed: show the reason; user can retry or type it in by hand.
+      setError((e as Error).message || "Reading failed.");
     }
-    setStep("review");
   }
 
   // photos/rawText now come back from the form — the user may have added more
   // documents on the review screen after the first read.
   async function save(v: VisitFormValue, media: { photos: string[]; rawText: string }) {
+    // With Supabase on, push photos to Storage first and store their paths.
+    const photos = supabaseConfigured ? await uploadImages(media.photos) : media.photos;
     await repo().saveVisit({
       ...v,
-      attachments: media.photos.filter(Boolean).map((url) => ({ kind: "other" as const, image_url: url })),
+      attachments: photos.filter(Boolean).map((url) => ({ kind: "other" as const, image_url: url })),
       raw_text: media.rawText || undefined,
     });
     router.push("/");
@@ -133,7 +141,7 @@ export default function CaptureScreen() {
         </div>
       )}
 
-      {step === "extracting" && (
+      {step === "extracting" && !error && (
         <div className="flex flex-col items-center gap-6 px-5 pt-16">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#e6e6f6] border-t-[#6366f1]" />
           <div className="text-center">
@@ -141,6 +149,33 @@ export default function CaptureScreen() {
             <div className="mt-1 text-[13px] font-medium text-[#9b9aaa]">
               {stage === "ocr" ? "Reading the text…" : "Extracting diagnosis, drugs & results…"}
             </div>
+          </div>
+        </div>
+      )}
+
+      {step === "extracting" && error && (
+        <div className="flex flex-col items-center gap-5 px-6 pt-16 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#fdf3f4] text-[26px]">⚠️</span>
+          <div>
+            <div className="text-[17px] font-extrabold text-[#1e1b4b]">Reading failed</div>
+            <p className="mt-1.5 break-words text-[13px] font-medium leading-[1.5] text-[#e0455a]">{error}</p>
+          </div>
+          <div className="flex w-full flex-col gap-2.5">
+            <button
+              onClick={() => extractFrom(photos)}
+              className="rounded-[16px] bg-[#6366f1] py-3.5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.4)]"
+            >
+              Try again
+            </button>
+            <button
+              onClick={() => {
+                setError(undefined);
+                setStep("review");
+              }}
+              className="py-2 text-[13.5px] font-semibold text-[#8d8c9c]"
+            >
+              Fill in by hand
+            </button>
           </div>
         </div>
       )}

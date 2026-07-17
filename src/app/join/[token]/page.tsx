@@ -3,27 +3,38 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { auth, type Role } from "@/lib/auth";
+import { useAuth } from "@/components/AuthProvider";
 
 const ROLE_LABEL: Record<Role, string> = { owner: "an owner", editor: "someone who can edit", viewer: "a viewer" };
 
-// Accept-invite screen — the target of the invite link. Public route (an invited
-// caregiver may arrive before signing in). In this preview it runs on the same
-// device to demo the loop; Phase 2 pairs it with real magic-link sign-in.
+// Accept-invite screen — the target of the invite link. Public route: an invited
+// caregiver may arrive before signing in. Accepting requires them to be signed in
+// as their OWN account; on accept they're switched into the shared household.
 export default function JoinScreen() {
   const router = useRouter();
   const { token } = useParams<{ token: string }>();
-  const [inv, setInv] = useState<ReturnType<typeof auth.getInvitation>>(null);
+  const { session, refresh } = useAuth();
+  const [inv, setInv] = useState<Awaited<ReturnType<typeof auth.getInvitation>>>(null);
   const [loading, setLoading] = useState(true);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string>();
 
   useEffect(() => {
-    setInv(auth.getInvitation(token));
-    setLoading(false);
+    auth.getInvitation(token).then((v) => {
+      setInv(v);
+      setLoading(false);
+    });
   }, [token]);
 
-  function accept() {
-    auth.acceptInvite(token);
-    setDone(true);
+  async function accept() {
+    setError(undefined);
+    try {
+      await auth.acceptInvite(token); // sets the shared household as active
+      await refresh(); // pick up the new household + role before we navigate
+      setDone(true);
+    } catch (e) {
+      setError((e as Error).message || "Couldn't accept the invite.");
+    }
   }
 
   if (loading) return <p className="p-8 text-sm text-[#a3a2b4]">Loading…</p>;
@@ -44,10 +55,10 @@ export default function JoinScreen() {
         <span className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-[#eafaf1] text-[32px]">🎉</span>
         <div className="text-[18px] font-extrabold text-[#1e1b4b]">You&apos;re in</div>
         <p className="text-[14px] font-medium leading-[1.5] text-[#7b7a8a]">
-          You&apos;ve joined <span className="font-bold text-[#4b4a5e]">{inv.household_name}</span>. You can now see this family&apos;s records.
+          You&apos;ve joined <span className="font-bold text-[#4b4a5e]">{inv.household_name}</span>. You&apos;re now viewing this family&apos;s records.
         </p>
-        <button onClick={() => router.replace("/household")} className="mt-2 rounded-[16px] bg-[#6366f1] px-8 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.4)]">
-          View household
+        <button onClick={() => router.replace("/")} className="mt-2 rounded-[16px] bg-[#6366f1] px-8 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.4)]">
+          Go to {inv.household_name}
         </button>
       </main>
     );
@@ -64,9 +75,25 @@ export default function JoinScreen() {
           You&apos;ve been invited as {ROLE_LABEL[inv.role]} to help manage this family&apos;s medical records.
         </p>
       </div>
-      <button onClick={accept} className="w-full rounded-[16px] bg-[#6366f1] py-4 text-[15.5px] font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.4)]">
-        Accept invite
-      </button>
+
+      {session ? (
+        <button onClick={accept} className="w-full rounded-[16px] bg-[#6366f1] py-4 text-[15.5px] font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.4)]">
+          Accept invite
+        </button>
+      ) : (
+        <div className="flex w-full flex-col gap-2 text-center">
+          <p className="text-[13px] font-medium text-[#9b9aaa]">Sign in or create your own account first, then reopen this link to accept.</p>
+          <button onClick={() => router.push("/signin")} className="w-full rounded-[16px] bg-[#6366f1] py-4 text-[15.5px] font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.4)]">
+            Sign in
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <p className="w-full rounded-[12px] border border-[#f6dde1] bg-[#fdf3f4] px-3.5 py-2.5 text-[13px] font-semibold text-[#e0455a]">
+          {error}
+        </p>
+      )}
     </main>
   );
 }

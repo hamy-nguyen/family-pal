@@ -106,6 +106,7 @@ export function VisitForm({
   const [rawText, setRawText] = useState(initialRawText);
   const [reading, setReading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
   const rec = tinted ? AI : INP;
   const set = <K extends keyof VisitFormValue>(k: K, v: VisitFormValue[K]) =>
     setF((x) => ({ ...x, [k]: v }));
@@ -131,7 +132,14 @@ export function VisitForm({
 
   async function submit() {
     setSaving(true);
-    await onSubmit(f, { photos, rawText });
+    setError(undefined);
+    try {
+      await onSubmit(f, { photos, rawText });
+    } catch (e) {
+      // Surface save failures (RLS, missing RPC, bad column…) instead of crashing.
+      setError((e as Error).message || String(e));
+      setSaving(false);
+    }
   }
 
   return (
@@ -141,8 +149,8 @@ export function VisitForm({
         <div>
           <span className={LBL}>Who is this for?</span>
           <div className="no-scrollbar flex gap-2 overflow-x-auto">
-            {profiles.map((p, i) => {
-              const c = memberColor(i);
+            {profiles.map((p) => {
+              const c = memberColor(p.color_index);
               const on = f.profile_id === p.id;
               return (
                 <button
@@ -293,6 +301,11 @@ export function VisitForm({
       </div>
 
       <div className="fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 px-5 pb-[max(16px,env(safe-area-inset-bottom))] pt-4" style={{ background: "linear-gradient(180deg,rgba(244,244,249,0),#f4f4f9 32%)" }}>
+        {error && (
+          <p className="mb-2.5 rounded-[12px] border border-[#f6dde1] bg-[#fdf3f4] px-3.5 py-2.5 text-[12.5px] font-semibold text-[#e0455a]">
+            Couldn&apos;t save: {error}
+          </p>
+        )}
         <button onClick={submit} disabled={saving || reading || !f.profile_id} className="w-full rounded-[16px] bg-[#6366f1] py-4 text-[15.5px] font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.4)] disabled:opacity-50">
           {saving ? "Saving…" : reading ? "Reading…" : submitLabel}
         </button>

@@ -22,8 +22,10 @@ export default function SetupScreen() {
             // Personalize the owner + the (still-editable) household default now
             // that we know the caregiver's real name.
             if (input.name) {
-              auth.setOwnerName(input.name);
-              auth.updateHouseholdName(`${input.name}'s Family`);
+              await auth.setOwnerName(input.name);
+              // solo-first: name the space after the person; they can rename it to
+              // a family name once they add members.
+              await auth.updateHouseholdName(input.name);
             }
             router.replace("/");
           }}

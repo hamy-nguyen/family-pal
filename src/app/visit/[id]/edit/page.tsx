@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { repo } from "@/lib/repo";
 import { useAuth } from "@/components/AuthProvider";
+import { supabaseConfigured } from "@/lib/supabase";
+import { uploadImages } from "@/lib/uploadImage";
 import { Header } from "@/components/Header";
 import { VisitForm, type VisitFormValue } from "@/components/VisitForm";
 import type { Profile, Visit } from "@/lib/types";
@@ -65,12 +67,14 @@ export default function EditVisitScreen() {
         initialRawText={visit.raw_text ?? ""}
         submitLabel="Save changes"
         onSubmit={async (val, media) => {
-          // Photos now live in the form (user can add docs while editing) — rebuild
-          // attachments from its list; keep fields the form doesn't touch (vitals).
+          // Photos live in the form (user can add docs while editing). With Supabase
+          // on, uploadImages turns new data-URLs into Storage paths and recovers the
+          // path from any already-signed URL, so we never persist an expiring URL.
+          const photos = supabaseConfigured ? await uploadImages(media.photos) : media.photos;
           await repo().updateVisit({
             ...visit,
             ...val,
-            attachments: media.photos.filter(Boolean).map((url) => ({ kind: "other" as const, image_url: url })),
+            attachments: photos.filter(Boolean).map((url) => ({ kind: "other" as const, image_url: url })),
             raw_text: media.rawText || visit.raw_text,
           });
           router.back();
