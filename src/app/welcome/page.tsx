@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import { markWelcomeSeen } from "@/lib/onboarding";
 
 // Onboarding — value prop + one CTA into sign-in. No back (it's the root of the
-// signed-out flow). The auth guard sends signed-out users here.
+// signed-out flow). The auth guard sends signed-out users here ONLY on the first
+// device visit; reaching this screen marks it seen so it never auto-shows again.
 const FEATURES = [
   { emoji: "📸", title: "Snap the paper", body: "Photograph any consultation record, prescription, or test result." },
   { emoji: "👨‍👩‍👧", title: "One book for the family", body: "Every member's history in one place — self, kids, parents." },
@@ -11,6 +14,11 @@ const FEATURES = [
 ];
 
 export default function WelcomeScreen() {
+  // WHY on mount (not on the button): if the user closes the app right here, we
+  // still count it as seen — welcome is a one-time intro, so it shouldn't wait
+  // for a tap that may never come.
+  useEffect(() => markWelcomeSeen(), []);
+
   return (
     <main className="flex flex-1 flex-col px-6 pb-[max(24px,env(safe-area-inset-bottom))] pt-[max(48px,env(safe-area-inset-top))]">
       <div className="flex flex-1 flex-col justify-center gap-8">

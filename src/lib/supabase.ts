@@ -17,5 +17,18 @@ export const supabaseConfigured = Boolean(url && key);
 export function supabaseClient() {
   if (!supabaseConfigured)
     throw new Error("Supabase env not set — using localStorage backend.");
-  return createBrowserClient(url!, key!);
+  // WHY explicit auth options: these are the library defaults, but stating them
+  // pins the "stay logged in" contract so a future upgrade can't silently drop it.
+  // persistSession -> the token survives closing/reopening the PWA;
+  // autoRefreshToken -> it's refreshed before expiry so long-idle sessions stay
+  // valid; detectSessionInUrl -> harmless here (email+password, no redirect hash).
+  // createBrowserClient is a per-(url,key) singleton in the browser, so repeated
+  // calls share one session + one refresh timer.
+  return createBrowserClient(url!, key!, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
 }

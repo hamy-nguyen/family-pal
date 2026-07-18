@@ -10,6 +10,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { usePathname, useRouter } from "next/navigation";
 import { auth, type Session, type Role } from "@/lib/auth";
 import { can as canFor, ROLE_LABEL, type Capability } from "@/lib/permissions";
+import { hasSeenWelcome } from "@/lib/onboarding";
 
 // Routes reachable while signed out. /join stays open so an invited caregiver
 // can land on the accept screen before signing in.
@@ -98,7 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       await auth.signOut();
       await load();
-      router.replace("/welcome");
+      // Welcome is a one-time intro; a signed-out returning user goes to sign-in.
+      router.replace("/signin");
     })();
   }, [router, load]);
 
@@ -107,7 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (!session && !isPublic(path)) {
-      router.replace("/welcome");
+      // First device visit gets the welcome pitch; after that, straight to sign-in.
+      router.replace(hasSeenWelcome() ? "/signin" : "/welcome");
     } else if (session && (path === "/welcome" || path === "/signin" || path.startsWith("/signin/"))) {
       router.replace("/");
     }
