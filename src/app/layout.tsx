@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
+import { ServiceWorker } from "@/components/ServiceWorker";
 
 // WHY vietnamese subset: record content (disease names, hospitals) is Vietnamese,
 // so the font must carry those diacritics, not just latin.
@@ -15,6 +16,10 @@ export const metadata: Metadata = {
   title: "Family Pal",
   description: "Your family's medical history, one tap away.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -23,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0ea5e9",
+  themeColor: "#f4f4f9",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -41,6 +46,7 @@ export default function RootLayout({
         <div className="mx-auto flex min-h-dvh max-w-md flex-col">
           <AuthProvider>{children}</AuthProvider>
         </div>
+        <ServiceWorker />
       </body>
     </html>
   );

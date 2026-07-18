@@ -1,7 +1,7 @@
 # PWA deployment — install & test on a mobile phone
 
-> Parked for later. This records the requirements, the open decision, and who
-> does what, so we can pick it straight back up.
+> DECISION MADE: **Path ③ — Vercel + tunnel the AI.** PWA code is done; the Vercel
+> + Cloudflare Tunnel steps are below under "Your steps."
 
 ## Goal
 Install Family Pal as a PWA on a phone and use it (photo → AI → save, records,
@@ -58,6 +58,49 @@ OCR + gemma live on the Mac's `localhost`. Wherever the app runs, `/api/ocr` and
   - ② / ③: install & run `cloudflared` (free)
   - ③: create the Vercel project + set env vars
 
-## Decision needed
-Which path (①, ②, or ③)? Recommendation: **② Cloudflare Tunnel** for a real
-installable PWA with the least setup, keeping the AI on the Mac.
+## DECIDED: Path ③ — Vercel + tunnel the AI
+
+### ✅ Code done (committed)
+- Real icons: `public/icon-192.png`, `icon-512.png`, `apple-touch-icon.png`
+- Service worker `public/sw.js` (+ `components/ServiceWorker.tsx`, prod-only, safe:
+  network-first navigations, cross-origin/mutations never cached)
+- Manifest theme/background aligned; `apple-touch-icon` + `theme-color` in layout
+- `export const maxDuration = 60` on `/api/ocr` and `/api/structure` (Vercel Hobby max)
+
+### Your steps
+
+**A. Deploy the frontend to Vercel**
+1. vercel.com → sign in with GitHub (**hamy-nguyen**).
+2. Add New Project → Import `hamy-nguyen/family-pal` (Next.js auto-detected).
+3. Add Environment Variables:
+   - `NEXT_PUBLIC_SUPABASE_URL` = your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = your publishable key
+   - `STRUCTURE_MODEL` = `gemma-4-e4b-it`
+   - `OCR_ENDPOINT` / `LMSTUDIO_URL` = fill in after step B
+4. Deploy → note the `https://family-pal-*.vercel.app` URL.
+
+**B. Tunnel the Mac AI (Cloudflare)**
+1. `brew install cloudflared`
+2. Start the Mac AI: OCR server on :8000 and LM Studio server on :1234.
+3. Two quick tunnels (each in its own terminal — each prints an https URL):
+   - `cloudflared tunnel --url http://localhost:8000`  → `https://<ocr>.trycloudflare.com`
+   - `cloudflared tunnel --url http://localhost:1234`  → `https://<lm>.trycloudflare.com`
+4. Set the Vercel env (then **redeploy** — env changes need a rebuild):
+   - `OCR_ENDPOINT`  = `https://<ocr>.trycloudflare.com/ocr`
+   - `LMSTUDIO_URL`  = `https://<lm>.trycloudflare.com/v1`
+
+**C. On your phone**
+Open the Vercel URL → **Add to Home Screen** (installs the PWA). Sign in
+(email+password), use it. Photo→AI works only while the Mac + tunnels are up.
+
+### Caveats / gotchas
+- **Quick-tunnel URLs change** every restart → you must re-update the Vercel env +
+  redeploy. For a stable URL, set up a *named* tunnel (needs a Cloudflare account +
+  a domain) later.
+- **Mac must be on** with servers + tunnels running for the AI. If it's off, the app
+  still works (records, co-management); photo→AI degrades gracefully ("Reading
+  failed → Fill by hand").
+- **LM Studio cold start** can exceed Vercel's 60s cap → keep the gemma model
+  loaded (disable auto-unload / raise TTL) so calls stay warm.
+- No magic-link redirect config needed (email+password auth). Keep Supabase
+  "Confirm email" OFF.

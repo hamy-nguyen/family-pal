@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const maxDuration = 60; // OCR over several images can add up; don't cut off at 10s
+
 // OCR endpoint. Forwards the image to the self-hosted Apple Vision server
 // (ocr-server/, set OCR_ENDPOINT). Falls back to SAMPLE text when the env var
 // is unset so the app still demos without the Python server running.

@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+// gemma can take 15-45s (worse on a cold LM Studio load) — allow Vercel's Hobby
+// max so the deployed call doesn't get cut off at the default 10s.
+export const maxDuration = 60;
+
 // Structuring step: OCR text + document photos -> a full structured record
 // (medical record fields + drug list + supplement list + paraclinical results).
 // Runs on local LM Studio (MLX) with an enforced JSON schema. Distinguishes
