@@ -104,3 +104,58 @@ Open the Vercel URL → **Add to Home Screen** (installs the PWA). Sign in
   loaded (disable auto-unload / raise TTL) so calls stay warm.
 - No magic-link redirect config needed (email+password auth). Keep Supabase
   "Confirm email" OFF.
+
+---
+
+## UPGRADE: stable AI URL via Tailscale Funnel (replaces cloudflared quick tunnels)
+
+> **Why:** cloudflared quick-tunnel URLs are random and change on every restart, so
+> each restart forced a Vercel env update + redeploy — and a zombie tunnel once
+> caused an "OCR failed: fetch failed" outage. Tailscale Funnel gives ONE permanent
+> hostname, so Vercel env is set **once, forever**. Chosen over Cloudflare Named
+> Tunnel (needs a domain we don't own) and ngrok (1 GB/mo cap + browser interstitial).
+
+### The permanent URLs (already set in Vercel)
+```
+OCR_ENDPOINT    = https://family-pal.tail05cc59.ts.net/ocr
+LMSTUDIO_URL    = https://family-pal.tail05cc59.ts.net:8443/v1
+STRUCTURE_MODEL = gemma-4-e4b-it
+```
+`ts.net` names never change for this node. Funnel public ports are 443/8443/10000,
+so OCR is on 443 (default) and LM Studio on 8443.
+
+### One-time setup (done — do NOT need to repeat)
+```bash
+brew install tailscale
+# daemon in USERSPACE mode → no root, no VPN takeover, runs alongside the AI procs
+tailscaled --tun=userspace-networking --socket=/tmp/tailscaled-fp.sock \
+           --statedir="$HOME/.tailscale-fp" &
+tailscale --socket=/tmp/tailscaled-fp.sock up --hostname=family-pal   # browser login
+# enable Funnel once in the admin console (the CLI prints a one-click URL)
+tailscale --socket=/tmp/tailscaled-fp.sock funnel --bg --https=443  localhost:8000
+tailscale --socket=/tmp/tailscaled-fp.sock funnel --bg --https=8443 localhost:1234
+```
+The funnel config + login are saved in `~/.tailscale-fp`, so they **auto-restore**
+when `tailscaled` restarts — no re-login, no re-running the funnel commands.
+
+### Daily run (after a reboot)
+1. Open **LM Studio** (GUI app) so its server is on :1234.
+2. `caffeinate -is bash tmp/run-ai.sh`
+   - starts the OCR server (:8000) + `tailscaled` (restores both funnels)
+   - best-effort `lms load gemma-4-e4b-it` so the model is resident
+   - `caffeinate` keeps the Mac awake with the lid closed
+
+### Gotchas learned the hard way
+- **LM Studio must have the model LOADED**, or `/v1/chat/completions` returns
+  `400 "No models loaded"` (seen as "Structuring failed"). Load explicitly with
+  `lms load gemma-4-e4b-it` (no `--ttl` → never auto-unloads). Quitting the LM
+  Studio GUI unloads it.
+- **First-time Funnel DNS propagation** took ~20 min to publish the public A record
+  across all of `ts.net`'s nameservers (dnsimple ns1 lagged the others). This is a
+  ONE-time wait; the record is now stable. Verify with
+  `dig +short @1.1.1.1 family-pal.tail05cc59.ts.net A` → should return `103.84.155.x`.
+- **The Mac's own DNS is flaky for `ts.net`** in userspace mode (local curl to the
+  hostname may fail) — this is LOCAL ONLY and does **not** affect Vercel or the
+  phone, which resolve via public DNS. To test from the Mac, bypass DNS:
+  `curl --resolve family-pal.tail05cc59.ts.net:443:103.84.155.217 https://family-pal.tail05cc59.ts.net/health`
+- **Stop everything:** `pkill -f "tailscaled --tun=userspace"; kill $(lsof -ti:8000)`
