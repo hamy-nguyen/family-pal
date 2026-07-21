@@ -27,11 +27,15 @@ export function ProfileForm({
   submitLabel,
   onSave,
   onDelete,
+  hideRelationship = false,
 }: {
   initial: ProfileDraft;
   submitLabel: string;
   onSave: (p: ProfileDraft) => Promise<void> | void;
   onDelete?: () => Promise<void> | void;
+  // WHY: when setting up your OWN profile the relationship is implicitly "self",
+  // so the picker is noise. Hidden here; the draft keeps relationship = "self".
+  hideRelationship?: boolean;
 }) {
   const [p, setP] = useState<ProfileDraft>(initial);
   const [saving, setSaving] = useState(false);
@@ -83,26 +87,28 @@ export function ProfileForm({
         />
       </label>
 
-      <div>
-        <span className="mb-1.5 block text-[12px] font-semibold text-[#8d8c9c]">
-          Relationship
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {REL.map((r) => (
-            <button
-              key={r.key}
-              onClick={() => set("relationship", r.key)}
-              className={`rounded-full px-[13px] py-2 text-[13px] font-semibold ${
-                p.relationship === r.key
-                  ? "bg-[#6366f1] text-white"
-                  : "border border-[#ececf4] bg-white text-[#4b4a5e]"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
+      {!hideRelationship && (
+        <div>
+          <span className="mb-1.5 block text-[12px] font-semibold text-[#8d8c9c]">
+            Relationship
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {REL.map((r) => (
+              <button
+                key={r.key}
+                onClick={() => set("relationship", r.key)}
+                className={`rounded-full px-[13px] py-2 text-[13px] font-semibold ${
+                  p.relationship === r.key
+                    ? "bg-[#6366f1] text-white"
+                    : "border border-[#ececf4] bg-white text-[#4b4a5e]"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex gap-3">
         <label className="block flex-1">

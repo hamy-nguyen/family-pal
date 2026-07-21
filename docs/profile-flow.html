@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Profile Management — Family Pal</title>
+    <!-- Mermaid renders the <pre class="mermaid"> blocks. (In a Claude Artifact this is
+       automatic; for a standalone file we load it here.) -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, securityLevel: "loose" });
+    </script>
+    <style>
+      :root {
+        --ground: #f3f3f8;
+        --surface: #ffffff;
+        --ink: #1e1b4b;
+        --ink-soft: #4b4a5e;
+        --muted: #8d8c9c;
+        --line: #e7e7f0;
+        --line-strong: #d7d7e4;
+        --accent: #6366f1; /* ownership / primary */
+        --accent-soft: #eef0fe;
+        --grant: #0d9488; /* grants / access */
+        --danger: #dc2b4a;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ground: #131220;
+          --surface: #1b1a29;
+          --ink: #eeedf8;
+          --ink-soft: #bcbbd0;
+          --muted: #8f8ea8;
+          --line: #2b2940;
+          --line-strong: #363351;
+          --accent: #9092f9;
+          --accent-soft: #262551;
+          --grant: #2dd4bf;
+          --danger: #ff6b85;
+        }
+      }
+      :root[data-theme="light"] {
+        --ground: #f3f3f8;
+        --surface: #ffffff;
+        --ink: #1e1b4b;
+        --ink-soft: #4b4a5e;
+        --muted: #8d8c9c;
+        --line: #e7e7f0;
+        --line-strong: #d7d7e4;
+        --accent: #6366f1;
+        --accent-soft: #eef0fe;
+        --grant: #0d9488;
+        --danger: #dc2b4a;
+      }
+      :root[data-theme="dark"] {
+        --ground: #131220;
+        --surface: #1b1a29;
+        --ink: #eeedf8;
+        --ink-soft: #bcbbd0;
+        --muted: #8f8ea8;
+        --line: #2b2940;
+        --line-strong: #363351;
+        --accent: #9092f9;
+        --accent-soft: #262551;
+        --grant: #2dd4bf;
+        --danger: #ff6b85;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--ground);
+        color: var(--ink);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      .mono {
+        font-family:
+          ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+      }
+
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: clamp(28px, 5vw, 72px) clamp(18px, 4vw, 40px) 80px;
+        display: flex;
+        flex-direction: column;
+        gap: clamp(40px, 6vw, 64px);
+      }
+
+      /* masthead */
+      .masthead {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        position: relative;
+      }
+      .eyebrow {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .eyebrow.is-accent {
+        color: var(--accent);
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(2.1rem, 6vw, 3.1rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.02;
+        text-wrap: balance;
+      }
+      .dek {
+        margin: 0;
+        max-width: 62ch;
+        font-size: 1.06rem;
+        color: var(--ink-soft);
+      }
+      .dek b {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 13px;
+        cursor: pointer;
+      }
+      .toggle:hover {
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+      .toggle:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      /* sections */
+      section {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .head {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      h2 {
+        margin: 0;
+        font-size: clamp(1.3rem, 3vw, 1.6rem);
+        font-weight: 750;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+      }
+      .note {
+        margin: 2px 0 0;
+        max-width: 68ch;
+        font-size: 0.94rem;
+        color: var(--muted);
+      }
+      .note b {
+        color: var(--ink-soft);
+        font-weight: 650;
+      }
+
+      /* legend */
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 13px 6px 11px;
+      }
+      .swatch {
+        width: 22px;
+        height: 0;
+        border-radius: 2px;
+      }
+      .swatch.own {
+        border-top: 3px solid var(--accent);
+      }
+      .swatch.grant {
+        border-top: 3px dashed var(--grant);
+      }
+
+      /* diagram canvas — fixed light panel + all label text forced dark, so nothing
+       can hide in the background regardless of theme. Only TEXT is recolored. */
+      .canvas {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: clamp(14px, 3vw, 26px);
+        overflow-x: auto;
+        box-shadow:
+          0 1px 2px rgba(30, 27, 75, 0.04),
+          0 12px 30px -18px rgba(30, 27, 75, 0.18);
+      }
+      .canvas pre.mermaid {
+        margin: 0;
+        text-align: center;
+        min-width: 320px;
+        background: transparent;
+      }
+      .canvas pre.mermaid svg {
+        max-width: 100%;
+        height: auto;
+      }
+      .canvas pre.mermaid svg text,
+      .canvas pre.mermaid .nodeLabel,
+      .canvas pre.mermaid .nodeLabel *,
+      .canvas pre.mermaid .edgeLabel,
+      .canvas pre.mermaid .edgeLabel *,
+      .canvas pre.mermaid .label,
+      .canvas pre.mermaid .label * {
+        color: #1e1b4b !important;
+        fill: #1e1b4b !important;
+        background: transparent !important;
+      }
+      .canvas pre.mermaid .edgeLabel rect,
+      .canvas pre.mermaid rect.edgeLabel {
+        fill: #ffffff !important;
+      }
+
+      /* case table */
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.92rem;
+      }
+      thead th {
+        text-align: left;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+        padding: 13px 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+      }
+      tbody td {
+        padding: 12px 16px;
+        vertical-align: top;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      td.case {
+        font-weight: 650;
+        color: var(--ink);
+        width: 42%;
+      }
+      td.mech {
+        color: var(--ink-soft);
+        font-size: 0.86rem;
+      }
+      td.mech b {
+        color: var(--accent);
+        font-weight: 650;
+      }
+      td.mech i {
+        color: var(--grant);
+        font-style: normal;
+        font-weight: 650;
+      }
+
+      /* rules */
+      .rules {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .rule {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px 17px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .rule .k {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .rule .v {
+        font-size: 0.92rem;
+        color: var(--ink-soft);
+      }
+      .rule .v b {
+        color: var(--ink);
+        font-weight: 650;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding-top: 20px;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      footer .mono {
+        color: var(--ink-soft);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="masthead">
+        <button
+          class="toggle"
+          type="button"
+          aria-label="Toggle light or dark theme"
+        >
+          Theme
+        </button>
+        <div class="eyebrow">Family Pal · Data model</div>
+        <h1>Profile management</h1>
+        <p class="dek">
+          A profile is <b>owned</b> by exactly one principal — an account or a
+          household — and <b>granted</b> to any number of others. These diagrams
+          cover every finalized case.
+        </p>
+      </header>
+
+      <section>
+        <div class="head">
+          <div class="eyebrow is-accent">Model</div>
+          <h2>Ownership vs. access</h2>
+        </div>
+        <div class="legend">
+          <span class="chip"
+            ><span class="swatch own"></span>Owns — exactly one</span
+          >
+          <span class="chip"
+            ><span class="swatch grant"></span>Grant — zero to many</span
+          >
+        </div>
+        <div class="canvas">
+          <pre class="mermaid">
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-sans-serif, system-ui, sans-serif','fontSize':'14px','lineColor':'#9b9aae','textColor':'#1e1b4b','edgeLabelBackground':'#ffffff','background':'#ffffff'}}}%%
+flowchart LR
+  Acc(["Account"]):::prin
+  HH(["Household"]):::prin
+  Pr["Profile"]:::prof
+  Acc -- "member: owner / editor / viewer" --> HH
+  Acc == "OWNS · self-managed" ==> Pr
+  HH == "OWNS · family-managed" ==> Pr
+  Pr -. "grant: viewer / editor" .-> HH
+  Pr -. "grant: viewer / editor" .-> Acc
+  classDef prin fill:#eef0fe,stroke:#6366f1,color:#1e1b4b,stroke-width:1.5px;
+  classDef prof fill:#e2f5f2,stroke:#0d9488,color:#0f3d3a,stroke-width:1.5px;
+        </pre
+          >
+        </div>
+        <p class="note">
+          You can <b>see</b> a profile if you own it, you're a member of its
+          owner-household, it's granted to a household you're in, or it's
+          granted to your account. You can <b>edit</b> if that path is owner or
+          editor.
+        </p>
+      </section>
+
+      <section>
+        <div class="head">
+          <div class="eyebrow is-accent">Onboarding</div>
+          <h2>Sign-up → first profile</h2>
+        </div>
+        <div class="canvas">
+          <pre class="mermaid">
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-sans-serif, system-ui, sans-serif','fontSize':'14px','lineColor':'#9b9aae','textColor':'#1e1b4b','edgeLabelBackground':'#ffffff','background':'#ffffff'}}}%%
+flowchart TD
+  S(["New account"]) --> Inv{"Arrived via an invite link?"}
+  Inv -- "Yes" --> J["Join that household<br/>as a member"]:::acc
+  J --> Recon["Optional: grant your OWN profile<br/>to the family (reconciliation)"]:::grant
+  Inv -- "No" --> Setup["Set up your own profile"]
+  Setup --> Q{"How will you use it?"}
+  Q -- "Just me" --> Solo["Account-owned self-profile<br/>no household"]:::acc
+  Q -- "My family" --> Fam["Household + self-profile<br/>account-owned, granted to household"]:::hh
+  Fam --> Add["Add family members<br/>household-owned profiles"]:::hh
+  classDef acc fill:#eef0fe,stroke:#6366f1,color:#1e1b4b,stroke-width:1.5px;
+  classDef hh fill:#efe9fb,stroke:#8b5cf6,color:#2e1065,stroke-width:1.5px;
+  classDef grant fill:#e2f5f2,stroke:#0d9488,color:#0f3d3a,stroke-width:1.5px;
+        </pre>
+        </div>
+      </section>
+
+      <section>
+        <div class="head">
+          <div class="eyebrow is-accent">Lifecycle</div>
+          <h2>Every management case</h2>
+        </div>
+        <div class="canvas">
+          <pre class="mermaid">
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-sans-serif, system-ui, sans-serif','fontSize':'14px','lineColor':'#9b9aae','textColor':'#1e1b4b','edgeLabelBackground':'#ffffff','background':'#ffffff'}}}%%
+flowchart TD
+  Create{{"Create a profile"}}
+  Create -- "your own (individual)" --> AO["Account-owned"]:::acc
+  Create -- "a family member" --> HO["Household-owned"]:::hh
+  AO -- "grant to household(s)" --> Book["Appears in family book(s)<br/>grant to many = multi-family"]:::grant
+  HO -- "grant to household(s)" --> Book
+  AO -- "grant to an account" --> Doc["Shared with a doctor<br/>viewer, optional expiry"]:::grant
+  HO -- "grant to an account" --> Doc
+  HO -- "graduation: hand to the person" --> AO
+  AO -- "adoption: hand to a household" --> HO
+  Book -- "leave / remove a member" --> Rev["Revoke that household's grant<br/>records survive · non-destructive"]:::grant
+  AO -- "owner deletes" --> Del[("Records erased")]:::danger
+  HO -- "owner deletes" --> Del
+  classDef acc fill:#eef0fe,stroke:#6366f1,color:#1e1b4b,stroke-width:1.5px;
+  classDef hh fill:#efe9fb,stroke:#8b5cf6,color:#2e1065,stroke-width:1.5px;
+  classDef grant fill:#e2f5f2,stroke:#0d9488,color:#0f3d3a,stroke-width:1.5px;
+  classDef danger fill:#fbe6ea,stroke:#dc2b4a,color:#6b0f22,stroke-width:1.5px;
+        </pre>
+        </div>
+      </section>
+
+      <section>
+        <div class="head">
+          <div class="eyebrow is-accent">Cases</div>
+          <h2>Case → mechanism</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Case</th>
+                <th scope="col">Mechanism</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="case">Use the app individually</td>
+                <td class="mech">
+                  <b>Account-owned</b> self-profile, no household
+                </td>
+              </tr>
+              <tr>
+                <td class="case">Track a family</td>
+                <td class="mech"><b>Household-owned</b> member profiles</td>
+              </tr>
+              <tr>
+                <td class="case">Your own health in the family book</td>
+                <td class="mech">
+                  Account-owned + <i>grant to the household</i>
+                </td>
+              </tr>
+              <tr>
+                <td class="case">Someone joins your family (reconciliation)</td>
+                <td class="mech">
+                  They <i>grant</i> their profile to your household
+                </td>
+              </tr>
+              <tr>
+                <td class="case">A person in two families (multi-family)</td>
+                <td class="mech">
+                  <i>Grant to multiple households</i> — same record, both see it
+                </td>
+              </tr>
+              <tr>
+                <td class="case">Share one person with a doctor / teacher</td>
+                <td class="mech">
+                  <i>Grant to an account</i> (viewer, optional expiry)
+                </td>
+              </tr>
+              <tr>
+                <td class="case">Child grows up (graduation)</td>
+                <td class="mech">
+                  <b>Transfer ownership</b>: household → their account; keep or
+                  drop the family grant
+                </td>
+              </tr>
+              <tr>
+                <td class="case">
+                  Give a household-managed person their own login
+                </td>
+                <td class="mech">
+                  <b>Transfer ownership</b> between account and household
+                </td>
+              </tr>
+              <tr>
+                <td class="case">A member leaves or is removed</td>
+                <td class="mech">
+                  <i>Revoke</i> their owned-profile grants —
+                  <b>non-destructive</b>, nothing deleted
+                </td>
+              </tr>
+              <tr>
+                <td class="case">Erase a person's records</td>
+                <td class="mech">
+                  <b>Delete profile</b> (owner / editor) — hard delete, cascades
+                  visits
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <div class="head">
+          <div class="eyebrow is-accent">Rules</div>
+          <h2>Invariants baked in</h2>
+        </div>
+        <div class="rules">
+          <div class="rule">
+            <span class="k">Ownership</span
+            ><span class="v"
+              ><b>Exactly one owner</b> per profile; <b>many</b> grants.</span
+            >
+          </div>
+          <div class="rule">
+            <span class="k">Control</span
+            ><span class="v"
+              ><b>Only the owner</b> manages a profile's grants and ownership —
+              the anti-exfiltration guard.</span
+            >
+          </div>
+          <div class="rule">
+            <span class="k">Removal ≠ deletion</span
+            ><span class="v"
+              >Leaving/removing a member only <b>revokes grants</b>; records
+              leave with their owner.</span
+            >
+          </div>
+          <div class="rule">
+            <span class="k">No orphans</span
+            ><span class="v"
+              >Every household keeps <b>≥ 1 owner</b> — guards block the last
+              one from leaving.</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <span class="mono">FAMILY PAL</span> — profile ownership + grants model
+        · source of truth: <span class="mono">COMANAGEMENT_SPEC.md</span>
+      </footer>
+    </main>
+
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var btn = document.querySelector(".toggle");
+        btn.addEventListener("click", function () {
+          var cur = root.getAttribute("data-theme");
+          if (!cur)
+            cur = window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          root.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -24,7 +24,26 @@ export type Profile = {
   allergies?: string;
   chronic_conditions?: string;
   notes?: string;
+  // Ownership (exactly one is set). Account-owned = self-managed (individual use);
+  // household-owned = family-managed (baby/elderly with no login). See COMANAGEMENT_SPEC.md.
+  owner_account_id?: string;
+  owner_household_id?: string;
   created_at: string;
+};
+
+// A grant gives one household (whole family) OR one account (a doctor) access to a
+// profile, viewer or editor. A profile can have many grants — this is how a person's
+// records appear in several family books, or are shared with a clinician.
+export type GrantRole = "viewer" | "editor";
+export type ProfileGrant = {
+  id: string;
+  profile_id: string;
+  grantee_household_id?: string;
+  grantee_account_id?: string;
+  grantee_household_name?: string; // denormalized for display
+  role: GrantRole;
+  created_at: string;
+  expires_at?: string;
 };
 
 // ---- visit children ----

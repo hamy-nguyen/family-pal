@@ -32,7 +32,9 @@ export interface Auth {
 
   listMembers(): Promise<Member[]>;
   listInvitations(): Promise<Invitation[]>;
-  invite(email: string, role: Exclude<Role, "owner">): Promise<Invitation>;
+  // role may be 'owner' (a co-manager / co-owner). The invite surface is owner-only
+  // (members:manage), so only owners can grant owner.
+  invite(email: string, role: Role): Promise<Invitation>;
   getInvitation(token: string): Promise<(Invitation & { household_name: string }) | null>;
   acceptInvite(token: string): Promise<void>;
   setMemberRole(id: string, role: Role): Promise<void>;

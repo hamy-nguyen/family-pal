@@ -106,6 +106,7 @@ export default function HouseholdScreen() {
                       onChange={(e) => setRole(m.id, e.target.value as Role)}
                       className="rounded-[10px] border border-[#ececf4] bg-white py-1.5 pl-2 pr-1 text-[12px] font-bold text-[#4b4a5e] focus:outline-none"
                     >
+                      <option value="owner">Co-manager</option>
                       <option value="editor">Can edit</option>
                       <option value="viewer">View only</option>
                     </select>

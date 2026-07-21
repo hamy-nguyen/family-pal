@@ -48,6 +48,16 @@ export default function EditProfileScreen() {
             }
             router.back();
           }}
+          onDelete={
+            isNew
+              ? undefined
+              : async () => {
+                  // Destructive: removes this person + all their visits/records.
+                  if (!window.confirm(`Delete ${initial?.name || "this profile"} and all their medical records? This can't be undone.`)) return;
+                  await repo().deleteProfile(id);
+                  router.replace("/");
+                }
+          }
         />
       </div>
     </main>

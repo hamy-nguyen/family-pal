@@ -156,7 +156,7 @@ class LocalAuth implements Auth {
   async listInvitations(): Promise<Invitation[]> {
     return read().invitations.filter((i) => i.status === "pending");
   }
-  async invite(email: string, role: Exclude<Role, "owner">): Promise<Invitation> {
+  async invite(email: string, role: Role): Promise<Invitation> {
     const s = read();
     if (!s.household) throw new Error("no household");
     const addr = email.trim().toLowerCase();

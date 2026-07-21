@@ -15,10 +15,11 @@ export default function SetupScreen() {
         <ProfileForm
           initial={{ name: "", relationship: "self", color_index: 2 }}
           submitLabel="Continue"
+          hideRelationship
           onSave={async (p) => {
             const { id: _id, ...input } = p; // strip any id on create
             void _id;
-            await repo().createProfile(input);
+            await repo().createProfile({ ...input, relationship: "self" }, { own: true });
             // Personalize the owner + the (still-editable) household default now
             // that we know the caregiver's real name.
             if (input.name) {
@@ -27,7 +28,8 @@ export default function SetupScreen() {
               // a family name once they add members.
               await auth.updateHouseholdName(input.name);
             }
-            router.replace("/");
+            // Next: choose how they'll use the app (just themselves vs a family).
+            router.replace("/onboarding");
           }}
         />
       </div>

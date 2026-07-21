@@ -5,10 +5,10 @@
 //
 // ⚠ Written against supabase/schema.sql but untested against a live project.
 import { supabaseClient } from "./supabase";
-import { pickHousehold } from "./household";
+import { getActiveHouseholdId } from "./household";
 import { IMAGE_BUCKET } from "./uploadImage";
 import type { Repo, NewProfileInput } from "./repo";
-import type { Profile, Visit, NewVisitInput } from "./types";
+import type { Profile, Visit, NewVisitInput, ProfileGrant, GrantRole } from "./types";
 
 // One query string that embeds every child list + the profile name.
 const VISIT_SELECT =
@@ -59,17 +59,6 @@ export class SupabaseRepo implements Repo {
     }));
   }
 
-  private async householdId(): Promise<string | null> {
-    const { data: s } = await this.sb.auth.getSession();
-    const uid = s.session?.user.id;
-    if (!uid) return null;
-    const { data } = await this.sb
-      .from("household_members")
-      .select("household_id, role")
-      .eq("user_id", uid);
-    return pickHousehold(data ?? []); // honor the active-household choice
-  }
-
   // --- profiles ---
   async listProfiles(): Promise<Profile[]> {
     const { data } = await this.sb.from("profiles").select("*").order("created_at", { ascending: true });
@@ -79,21 +68,64 @@ export class SupabaseRepo implements Repo {
     const { data } = await this.sb.from("profiles").select("*").eq("id", id).maybeSingle();
     return (data as Profile) ?? null;
   }
-  async createProfile(input: NewProfileInput): Promise<Profile> {
-    const hid = await this.householdId();
-    if (!hid) throw new Error("no household");
-    const { data, error } = await this.sb.from("profiles").insert({ ...input, household_id: hid }).select("*").single();
+  // The household a new profile should be created in. WHY not pickHousehold: that
+  // returns the ACTIVE household regardless of role, so if you're currently viewing a
+  // family you were invited into (viewer/editor), inserting there fails RLS. A profile
+  // must land in a household you can WRITE to — prefer the active one if writable, else
+  // one you own, else any writable one.
+  private async writableHouseholdId(): Promise<string | null> {
+    const { data: s } = await this.sb.auth.getSession();
+    const uid = s.session?.user.id;
+    if (!uid) return null;
+    const { data } = await this.sb.from("household_members").select("household_id, role").eq("user_id", uid);
+    const rows = (data ?? []) as { household_id: string; role: string }[];
+    const writable = rows.filter((r) => r.role === "owner" || r.role === "editor");
+    const active = getActiveHouseholdId();
+    return (
+      writable.find((r) => r.household_id === active)?.household_id ??
+      writable.find((r) => r.role === "owner")?.household_id ??
+      writable[0]?.household_id ??
+      null
+    );
+  }
+
+  async createProfile(input: NewProfileInput, opts?: { own?: boolean }): Promise<Profile> {
+    // WHY an RPC (not a direct insert): profile creation goes through a SECURITY
+    // DEFINER function — same pattern as save_visit — which does the permission check
+    // in-function and inserts server-side, avoiding the RLS WITH CHECK path that was
+    // denying valid inserts in this environment.
+    // own = account-owned (your self-profile); otherwise household-owned (a writable one).
+    const p: Record<string, unknown> = { ...input };
+    if (!opts?.own) {
+      const hid = await this.writableHouseholdId();
+      if (!hid) throw new Error("You don't have a household you can add a profile to.");
+      p.owner_household_id = hid;
+    }
+    const { data, error } = await this.sb.rpc("create_profile", { p, as_own: !!opts?.own });
     if (error) fail(error);
     return data as Profile;
   }
   async updateProfile(p: Profile): Promise<Profile> {
-    const { data, error } = await this.sb.from("profiles").update(p).eq("id", p.id).select("*").single();
+    // WHY an explicit patch: sending the whole Profile would push owner_* (possibly
+    // undefined) and could clear ownership, breaking the one-owner constraint. Only
+    // the editable fields are updated here.
+    const patch = {
+      name: p.name, relationship: p.relationship,
+      date_of_birth: p.date_of_birth ?? null, sex: p.sex ?? null,
+      color_index: p.color_index, blood_type: p.blood_type ?? null,
+      allergies: p.allergies ?? null, chronic_conditions: p.chronic_conditions ?? null,
+      notes: p.notes ?? null,
+    };
+    const { data, error } = await this.sb.from("profiles").update(patch).eq("id", p.id).select("*").single();
     if (error) fail(error);
     return data as Profile;
   }
   async deleteProfile(id: string): Promise<void> {
-    // visits cascade via the FK (on delete cascade) in schema.sql.
-    await this.sb.from("profiles").delete().eq("id", id);
+    // Via RPC (SECURITY DEFINER) — checks you own the profile / are owner-editor of its
+    // household, then deletes (visits + grants cascade). Surfaces errors, unlike the old
+    // direct delete which silently no-op'd when RLS refused.
+    const { error } = await this.sb.rpc("delete_profile", { pid: id });
+    if (error) fail(error);
   }
 
   // --- visits (+ children) ---
@@ -122,5 +154,38 @@ export class SupabaseRepo implements Repo {
   }
   async deleteVisit(id: string): Promise<void> {
     await this.sb.from("visits").delete().eq("id", id);
+  }
+
+  // --- grants + ownership (RLS enforces: only the profile's owner may manage grants) ---
+  async listGrants(profileId: string): Promise<ProfileGrant[]> {
+    const { data, error } = await this.sb
+      .from("profile_grants")
+      .select("id, profile_id, grantee_household_id, grantee_account_id, role, created_at, expires_at, households(name)")
+      .eq("profile_id", profileId);
+    if (error) fail(error);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data ?? []).map((g: any) => ({
+      id: g.id, profile_id: g.profile_id,
+      grantee_household_id: g.grantee_household_id ?? undefined,
+      grantee_account_id: g.grantee_account_id ?? undefined,
+      grantee_household_name: g.households?.name,
+      role: g.role as GrantRole, created_at: g.created_at, expires_at: g.expires_at ?? undefined,
+    }));
+  }
+  async grantProfileToHousehold(profileId: string, householdId: string, role: GrantRole): Promise<void> {
+    const { error } = await this.sb.from("profile_grants").insert({ profile_id: profileId, grantee_household_id: householdId, role });
+    if (error) fail(error);
+  }
+  async revokeGrant(grantId: string): Promise<void> {
+    const { error } = await this.sb.from("profile_grants").delete().eq("id", grantId);
+    if (error) fail(error);
+  }
+  async transferProfileOwnership(profileId: string, to: { accountId: string } | { householdId: string }): Promise<void> {
+    // Graduation / adoption: flip ownership to an account or a household (the CHECK keeps exactly one set).
+    const patch = "accountId" in to
+      ? { owner_account_id: to.accountId, owner_household_id: null }
+      : { owner_household_id: to.householdId, owner_account_id: null };
+    const { error } = await this.sb.from("profiles").update(patch).eq("id", profileId);
+    if (error) fail(error);
   }
 }

@@ -2,13 +2,18 @@
 // SupabaseRepo behind the same interface, selected by env. Screens only ever
 // see this interface, never the backend.
 
-import type { Profile, Visit, NewVisitInput } from "./types";
+import type { Profile, Visit, NewVisitInput, ProfileGrant, GrantRole } from "./types";
 import { auth } from "./auth";
 import { can, type Capability } from "./permissions";
 import { supabaseConfigured } from "./supabase";
 import { SupabaseRepo } from "./repo.supabase";
 
-export type NewProfileInput = Omit<Profile, "id" | "created_at">;
+// Owner fields are set by the backend (from the active household, or your account for
+// individual use), never by the profile form — so callers don't supply them.
+export type NewProfileInput = Omit<
+  Profile,
+  "id" | "created_at" | "owner_account_id" | "owner_household_id"
+>;
 
 // Defense in depth: the UI hides what you can't do, but every write also checks
 // the acting role here so a viewer can't mutate by any path. Phase 2: the same
@@ -22,7 +27,9 @@ async function assertCan(cap: Capability) {
 export interface Repo {
   listProfiles(): Promise<Profile[]>;
   getProfile(id: string): Promise<Profile | null>;
-  createProfile(input: NewProfileInput): Promise<Profile>;
+  // opts.own = this is the signed-in person's OWN profile → account-owned (self-managed),
+  // per the ownership model. Otherwise it's household-owned (a family member you manage).
+  createProfile(input: NewProfileInput, opts?: { own?: boolean }): Promise<Profile>;
   updateProfile(p: Profile): Promise<Profile>;
   deleteProfile(id: string): Promise<void>; // also removes that profile's visits
 
@@ -31,6 +38,17 @@ export interface Repo {
   saveVisit(input: NewVisitInput): Promise<Visit>;
   updateVisit(v: Visit): Promise<Visit>;
   deleteVisit(id: string): Promise<void>;
+
+  // ---- co-management: grants + ownership (owner + grants model) ----
+  // A grant lets a whole household see/edit a profile; ownership transfer is how a
+  // profile "graduates" from a family to a person's own account. See COMANAGEMENT_SPEC.md.
+  listGrants(profileId: string): Promise<ProfileGrant[]>;
+  grantProfileToHousehold(profileId: string, householdId: string, role: GrantRole): Promise<void>;
+  revokeGrant(grantId: string): Promise<void>;
+  transferProfileOwnership(
+    profileId: string,
+    to: { accountId: string } | { householdId: string },
+  ): Promise<void>;
 }
 
 const uid = () =>
@@ -39,6 +57,7 @@ const uid = () =>
 
 const LS_PROFILES = "family_pal_profiles";
 const LS_VISITS = "family_pal_visits";
+const LS_GRANTS = "family_pal_grants";
 
 class LocalRepo implements Repo {
   private read<T>(key: string, fallback: T): T {
@@ -61,7 +80,8 @@ class LocalRepo implements Repo {
   async getProfile(id: string): Promise<Profile | null> {
     return (await this.listProfiles()).find((p) => p.id === id) ?? null;
   }
-  async createProfile(input: NewProfileInput): Promise<Profile> {
+  async createProfile(input: NewProfileInput, _opts?: { own?: boolean }): Promise<Profile> {
+    void _opts; // ownership is a Supabase concept; the mock just stores the profile
     await assertCan("profiles:manage");
     const all = await this.listProfiles();
     const profile: Profile = {
@@ -151,6 +171,26 @@ class LocalRepo implements Repo {
       LS_VISITS,
       (await this.listVisits()).filter((v) => v.id !== id)
     );
+  }
+
+  // ---- grants + ownership (mock: localStorage; real enforcement is Supabase RLS) ----
+  async listGrants(profileId: string): Promise<ProfileGrant[]> {
+    return this.read<ProfileGrant[]>(LS_GRANTS, []).filter((g) => g.profile_id === profileId);
+  }
+  async grantProfileToHousehold(profileId: string, householdId: string, role: GrantRole): Promise<void> {
+    await assertCan("profiles:manage");
+    const all = this.read<ProfileGrant[]>(LS_GRANTS, []);
+    if (all.some((g) => g.profile_id === profileId && g.grantee_household_id === householdId)) return;
+    all.push({ id: uid(), profile_id: profileId, grantee_household_id: householdId, role, created_at: new Date().toISOString() });
+    this.write(LS_GRANTS, all);
+  }
+  async revokeGrant(grantId: string): Promise<void> {
+    await assertCan("profiles:manage");
+    this.write(LS_GRANTS, this.read<ProfileGrant[]>(LS_GRANTS, []).filter((g) => g.id !== grantId));
+  }
+  async transferProfileOwnership(): Promise<void> {
+    // No-op in the mock — ownership only means something with real accounts (Supabase).
+    await assertCan("profiles:manage");
   }
 }
 

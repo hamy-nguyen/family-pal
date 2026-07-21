@@ -68,6 +68,13 @@ export class SupabaseAuth implements Auth {
     const { error } = await this.sb.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
+      // When "Confirm email" is ON in Supabase, the confirmation link returns the
+      // user to the sign-in screen (they then sign in). Requires this URL to be in
+      // Supabase → Auth → URL Configuration → Redirect URLs.
+      options: {
+        emailRedirectTo:
+          typeof window !== "undefined" ? `${window.location.origin}/signin?verified=1` : undefined,
+      },
     });
     if (error) throw error; // e.g. "User already registered"
   }
@@ -166,7 +173,7 @@ export class SupabaseAuth implements Auth {
     const { data } = await this.sb.from("invitations").select("*").eq("household_id", hid).eq("status", "pending");
     return (data ?? []) as Invitation[];
   }
-  async invite(email: string, role: Exclude<Role, "owner">): Promise<Invitation> {
+  async invite(email: string, role: Role): Promise<Invitation> {
     const hid = await this.householdId();
     if (!hid) throw new Error("no household");
     const { data, error } = await this.sb
