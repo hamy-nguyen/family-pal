@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import { repo } from "@/lib/repo";
 import { useAuth } from "@/components/AuthProvider";
 import { compressImage } from "@/lib/compress";
@@ -408,9 +409,5 @@ function RecordCard({
 }
 
 function TrashIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-    </svg>
-  );
+  return <Trash2 size={17} strokeWidth={2} />;
 }

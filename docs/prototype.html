@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Family Pal — interactive prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f4f9; --card:#fff; --ink:#1e1b4b; --ink2:#4b4a5e; --muted:#9b9aaa; --muted2:#8d8c9c;
+    --line:#f1f1f7; --line2:#ececf4; --indigo:#6366f1; --indigo-soft:#eef0fe; --purple:#8b5cf6; --pink:#ec4899;
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+  html,body{margin:0;height:100%;overflow-x:hidden;}
+  body{font-family:"Plus Jakarta Sans",system-ui,sans-serif; background:#dcdbe6; display:flex; align-items:center; justify-content:center; min-height:100dvh; width:100%;}
+  .device{width:402px; flex:none; height:min(872px,100dvh); background:var(--bg); position:relative; overflow:hidden; box-shadow:0 30px 80px -30px rgba(30,27,75,.5); border-radius:0;}
+  @media (min-width:520px){ .device{border-radius:38px; border:10px solid #16142a;} }
+
+  .screen{display:none; position:absolute; inset:0; flex-direction:column;}
+  .screen.on{display:flex;}
+  .scroll{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .pad{padding:0 20px;}
+  .bottombar{padding:14px 20px 24px; background:linear-gradient(to top,var(--bg) 66%,rgba(244,244,249,0));}
+  .abs-bottom{position:absolute; left:0; right:0; bottom:0;}
+
+  h1{margin:0;color:var(--ink);letter-spacing:-.02em;}
+  .muted{color:var(--muted);} .ink2{color:var(--ink2);}
+  .row{display:flex;align-items:center;} .grow{flex:1;min-width:0;}
+  .trunc{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .center{align-items:center;text-align:center;}
+
+  .btn{width:100%;background:var(--indigo);color:#fff;border:0;border-radius:16px;padding:16px;font-size:15.5px;font-weight:800;font-family:inherit;cursor:pointer;}
+  .btn.ghost{background:#fff;color:var(--ink2);border:1px solid var(--line2);}
+  .btn.dark{background:#1e1b4b;}
+  .btn:active{transform:scale(.99);}
+  .link{background:none;border:0;color:var(--muted2);font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;padding:6px;}
+  .fab{width:100%;background:var(--indigo);color:#fff;border:0;border-radius:999px;padding:18px;font-size:16.5px;font-weight:800;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 26px rgba(99,102,241,.42);cursor:pointer;}
+
+  .topbar{display:flex;align-items:center;gap:12px;padding:16px 20px 6px;}
+  .iconbtn{width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid var(--line2);display:grid;place-items:center;color:#1e1b4b;flex:none;cursor:pointer;}
+  .toptitle{font-size:19px;font-weight:800;color:var(--ink);}
+  .tsub{font-size:13px;color:var(--muted);font-weight:500;margin-top:2px;}
+
+  .avatar{border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;flex:none;}
+  .field{margin-bottom:14px;}
+  .flabel{font-size:12px;font-weight:700;color:var(--muted2);margin-bottom:6px;}
+  .inp,.fbox{width:100%;background:#fff;border:1px solid var(--line2);border-radius:13px;padding:13px 14px;font-size:14.5px;font-weight:700;color:var(--ink);font-family:inherit;min-height:47px;}
+  .inp::placeholder{color:#b4b3c2;font-weight:500;}
+  .fbox{display:flex;align-items:center;} .fbox.ph{color:#b4b3c2;font-weight:500;}
+  .frow{display:flex;gap:10px;}
+  .dashed{border:1.5px dashed #cdd0dd;border-radius:14px;padding:16px;text-align:center;color:var(--indigo);font-weight:800;font-size:14px;background:#fbfbfe;cursor:pointer;}
+  .seclabel{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#a3a2b4;}
+
+  .card{background:#fff;border-radius:20px;box-shadow:0 4px 18px rgba(30,27,75,.05);}
+  .reccard{display:flex;gap:14px;align-items:flex-start;padding:18px;margin-bottom:12px;cursor:pointer;}
+  .recicon{width:52px;height:52px;border-radius:14px;background:#f1f1f6;display:grid;place-items:center;color:#8d8c9c;flex:none;}
+  .rectitle{font-size:16.5px;font-weight:800;color:var(--ink);line-height:1.25;}
+  .recsub{display:flex;align-items:center;gap:5px;color:var(--muted2);font-size:13.5px;font-weight:500;margin-top:5px;}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#efe9fb;color:#5b3fb0;font-weight:700;font-size:12.5px;padding:4px 9px 4px 4px;border-radius:999px;}
+  .chip.pink{background:#fde7f1;color:#b33071;}
+  .chip .d{width:19px;height:19px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:800;}
+  .doc{width:62px;height:78px;border-radius:10px;background:#fbfbfd;border:1px solid var(--line2);position:relative;overflow:hidden;flex:none;}
+  .doc::after{content:"";position:absolute;inset:9px 8px;background:repeating-linear-gradient(#e4e2ee 0 1.5px,transparent 1.5px 6px);opacity:.85;}
+
+  .inforow{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;}
+  .inforow+.inforow{border-top:1px solid var(--line);}
+  .infok{color:var(--muted2);font-size:14px;font-weight:600;} .infov{color:var(--ink);font-size:14.5px;font-weight:800;text-align:right;max-width:60%;}
+
+  .segbtn{border:1px solid var(--line2);background:#fff;border-radius:999px;padding:9px 16px;font-weight:800;font-size:13.5px;color:var(--ink2);font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+  .segbtn.on{border-color:var(--indigo);color:#fff;}
+  .segbtn.on.hh{background:var(--purple);border-color:var(--purple);} .segbtn.on.me{background:var(--pink);border-color:var(--pink);}
+
+  .memb{display:flex;gap:18px;padding:6px 0 2px;}
+  .memb .m{display:flex;flex-direction:column;align-items:center;gap:8px;width:70px;cursor:pointer;}
+  .memb .ring{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;font-size:22px;}
+  .memb .lab{font-size:13px;font-weight:700;color:var(--ink);} .memb .lab.off{color:var(--muted);font-weight:600;}
+
+  .listcard{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 18px rgba(30,27,75,.05);}
+  .listrow{display:flex;align-items:center;gap:12px;padding:16px 18px;cursor:pointer;}
+  .listrow+.listrow{border-top:1px solid var(--line);}
+
+  .choicecard{display:flex;gap:16px;align-items:flex-start;background:#fff;border:1px solid var(--line2);border-radius:18px;padding:18px;box-shadow:0 2px 10px rgba(30,27,75,.04);margin-bottom:14px;cursor:pointer;}
+  .choicecard .ic{width:48px;height:48px;border-radius:14px;background:var(--indigo-soft);display:grid;place-items:center;font-size:24px;flex:none;}
+  .choicecard .t{font-size:16px;font-weight:800;color:var(--ink);} .choicecard .d{font-size:13px;color:var(--muted2);line-height:1.45;margin-top:3px;}
+
+  .reading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:40px;}
+  .pulse{width:96px;height:96px;border-radius:28px;background:var(--indigo-soft);display:grid;place-items:center;}
+  .bar{height:9px;border-radius:999px;background:#e7e7f0;overflow:hidden;width:100%;max-width:240px;} .bar>i{display:block;height:100%;background:var(--indigo);border-radius:999px;width:0;animation:fill 2s ease forwards;}
+  @keyframes fill{to{width:92%;}}
+
+  .hero-badge{width:64px;height:64px;border-radius:20px;background:var(--indigo);display:grid;place-items:center;font-size:28px;box-shadow:0 12px 28px rgba(99,102,241,.4);}
+  .feat{display:flex;gap:14px;align-items:flex-start;} .feat .fi{width:40px;height:40px;border-radius:12px;background:var(--indigo-soft);display:grid;place-items:center;font-size:19px;flex:none;}
+
+  /* screen index */
+  .idx-btn{position:fixed;right:16px;bottom:16px;z-index:50;background:#1e1b4b;color:#fff;border:0;border-radius:14px;padding:11px 15px;font-family:"Plus Jakarta Sans";font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;gap:8px;align-items:center;}
+  .idx{position:fixed;inset:0;z-index:49;background:rgba(20,18,32,.6);backdrop-filter:blur(3px);display:none;padding:40px 20px;overflow:auto;}
+  .idx.on{display:block;}
+  .idx-inner{max-width:520px;margin:0 auto;background:#fff;border-radius:20px;padding:22px;}
+  .idx-inner h3{margin:0 0 4px;color:var(--ink);font-size:18px;}
+  .idx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:14px;}
+  .idx-grid button{text-align:left;border:1px solid var(--line2);background:#fbfbfe;border-radius:11px;padding:11px 12px;font-family:inherit;font-weight:700;font-size:12.5px;color:var(--ink2);cursor:pointer;}
+  .idx-grid button:hover{border-color:var(--indigo);color:var(--indigo);}
+  .idx-grid .g{grid-column:1/-1;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#a3a2b4;font-weight:800;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="device" id="device">
+
+  <!-- ===== WELCOME ===== -->
+  <section class="screen" data-screen="welcome">
+    <div class="scroll pad" style="display:flex;flex-direction:column;justify-content:center;padding-bottom:24px">
+      <div class="hero-badge" style="margin-top:20px">🩺</div>
+      <h1 style="font-size:30px;font-weight:800;margin-top:20px;line-height:1.1">Your family's medical history, one tap away.</h1>
+      <p class="muted" style="font-size:15px;font-weight:500;line-height:1.5;margin-top:12px">Family Pal turns the papers you get after every visit into a searchable health book for the whole family.</p>
+      <div style="display:flex;flex-direction:column;gap:16px;margin-top:26px">
+        <div class="feat"><span class="fi">📸</span><div><div style="font-weight:800;color:var(--ink);font-size:14.5px">Snap the paper</div><div class="muted" style="font-size:13px">Photograph any record, prescription, or test result.</div></div></div>
+        <div class="feat"><span class="fi">👨‍👩‍👧</span><div><div style="font-weight:800;color:var(--ink);font-size:14.5px">One book for the family</div><div class="muted" style="font-size:13px">Every member's history in one place.</div></div></div>
+        <div class="feat"><span class="fi">🔍</span><div><div style="font-weight:800;color:var(--ink);font-size:14.5px">Find it in seconds</div><div class="muted" style="font-size:13px">Search by diagnosis, clinic, or medicine.</div></div></div>
+      </div>
+    </div>
+    <div class="bottombar"><button class="fab" onclick="go('signup')">Get started</button></div>
+  </section>
+
+  <!-- ===== SIGN UP ===== -->
+  <section class="screen" data-screen="signup">
+    <div class="topbar"><div class="iconbtn" onclick="go('welcome')">‹</div><div><div class="toptitle">Create account</div><div class="tsub">Set an email and password</div></div></div>
+    <div class="scroll pad" style="padding-top:14px">
+      <div class="field"><div class="flabel">Email</div><input class="inp" placeholder="you@email.com" value="hamy@email.com"></div>
+      <div class="field"><div class="flabel">Password</div><input class="inp" type="password" placeholder="At least 6 characters" value="••••••••"></div>
+      <button class="btn" style="margin-top:6px" onclick="go('confirm')">Create account</button>
+      <div class="center" style="margin-top:10px"><button class="link" onclick="go('signin')">Already have an account? Sign in</button></div>
+    </div>
+  </section>
+
+  <!-- ===== SIGN IN ===== -->
+  <section class="screen" data-screen="signin">
+    <div class="topbar"><div class="iconbtn" onclick="go('welcome')">‹</div><div><div class="toptitle">Welcome back</div><div class="tsub">Sign in with your email and password</div></div></div>
+    <div class="scroll pad" style="padding-top:14px">
+      <div class="field"><div class="flabel">Email</div><input class="inp" placeholder="you@email.com" value="hamy@email.com"></div>
+      <div class="field"><div class="flabel">Password</div><input class="inp" type="password" value="••••••••"></div>
+      <button class="btn" style="margin-top:6px" onclick="go('home')">Sign in</button>
+      <div class="center" style="margin-top:10px"><button class="link" onclick="go('signup')">New here? Create an account</button></div>
+    </div>
+  </section>
+
+  <!-- ===== CONFIRM EMAIL ===== -->
+  <section class="screen" data-screen="confirm">
+    <div class="topbar"><div class="toptitle">Check your email</div></div>
+    <div class="scroll center" style="justify-content:center;display:flex;flex-direction:column;padding:0 30px;gap:18px">
+      <div style="width:76px;height:76px;border-radius:22px;background:var(--indigo-soft);display:grid;place-items:center;font-size:34px;margin:0 auto">📬</div>
+      <p class="ink2" style="font-size:15px;font-weight:500;line-height:1.55">We sent a confirmation link to <b style="color:var(--ink)">hamy@email.com</b>. Open it to verify your email, then you're in.</p>
+      <button class="btn" onclick="go('setup')">Open the link (demo)</button>
+    </div>
+  </section>
+
+  <!-- ===== SETUP PROFILE ===== -->
+  <section class="screen" data-screen="setup">
+    <div class="topbar"><div><div class="toptitle">Set up your profile</div><div class="tsub">Step 1 · This is you</div></div></div>
+    <div class="scroll pad" style="padding-top:12px">
+      <div class="row" style="gap:14px;margin-bottom:16px"><span class="avatar" style="width:64px;height:64px;background:var(--purple);font-size:24px">H</span>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          <span style="width:26px;height:26px;border-radius:50%;background:#6366f1;box-shadow:0 0 0 2px #fff,0 0 0 4px #6366f1"></span>
+          <span style="width:26px;height:26px;border-radius:50%;background:#8b5cf6"></span><span style="width:26px;height:26px;border-radius:50%;background:#ec4899"></span><span style="width:26px;height:26px;border-radius:50%;background:#10b981"></span><span style="width:26px;height:26px;border-radius:50%;background:#f59e0b"></span></div>
+      </div>
+      <div class="field"><div class="flabel">Name</div><input class="inp" value="Ha My"></div>
+      <div class="frow"><div class="field grow"><div class="flabel">Date of birth</div><div class="fbox">03 / 08 / 2003</div></div><div class="field" style="width:120px"><div class="flabel">Sex</div><div class="fbox">Female</div></div></div>
+      <div class="seclabel" style="margin:6px 0 10px">Medical details · optional</div>
+      <div class="field"><div class="flabel">Blood type</div><div class="fbox">B</div></div>
+      <button class="btn" style="margin-top:4px" onclick="go('choice')">Continue</button>
+    </div>
+  </section>
+
+  <!-- ===== ONBOARDING CHOICE ===== -->
+  <section class="screen" data-screen="choice">
+    <div class="topbar"><div><div class="toptitle">How will you use Family Pal?</div><div class="tsub">Step 2 · You can change this anytime</div></div></div>
+    <div class="scroll pad" style="padding-top:16px">
+      <div class="choicecard" onclick="go('home')"><div class="ic">🧍</div><div><div class="t">Just me</div><div class="d">Track my own health records. I can add family or get invited later.</div></div></div>
+      <div class="choicecard" style="border-color:var(--indigo);box-shadow:0 8px 24px rgba(99,102,241,.14)" onclick="go('addfamily')"><div class="ic">👨‍👩‍👧</div><div><div class="t">My family</div><div class="d">Manage records for my family and invite others to co-manage.</div></div></div>
+    </div>
+  </section>
+
+  <!-- ===== ADD FAMILY ===== -->
+  <section class="screen" data-screen="addfamily">
+    <div class="topbar"><div><div class="toptitle">Add your family</div><div class="tsub">Step 3 · The people you'll manage</div></div></div>
+    <div class="scroll pad" style="padding-top:14px">
+      <p class="muted" style="font-size:13.5px;font-weight:500;line-height:1.5">Create a profile for each family member. You can invite others to co-manage next.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin:16px 0">
+        <div class="row" style="gap:12px;background:#fff;border:1px solid var(--line2);border-radius:14px;padding:12px 14px"><span class="avatar" style="width:40px;height:40px;background:var(--purple);font-size:16px">H</span><span style="font-weight:800;color:var(--ink);font-size:14.5px">Ha My</span></div>
+        <div class="row" style="gap:12px;background:#fff;border:1px solid var(--line2);border-radius:14px;padding:12px 14px"><span class="avatar" style="width:40px;height:40px;background:var(--pink);font-size:16px">M</span><span style="font-weight:800;color:var(--ink);font-size:14.5px">Mẹ</span></div>
+      </div>
+      <div class="dashed" onclick="go('editrecord')">+ Add a family member</div>
+    </div>
+    <div class="bottombar"><button class="fab" onclick="go('invite')">Continue</button><div class="center" style="margin-top:4px"><span class="muted" style="font-size:12px">Next: invite co-managers (optional)</span></div></div>
+  </section>
+
+  <!-- ===== HOME / RECORDS ===== -->
+  <section class="screen" data-screen="home">
+    <div class="scroll">
+      <div class="pad" style="padding-top:22px">
+        <div class="row"><div class="grow"><div class="muted" style="font-size:16px;font-weight:600">Good afternoon</div><h1 style="font-size:34px;font-weight:800;margin-top:2px">Ha My</h1></div>
+          <span class="avatar" style="width:52px;height:52px;background:var(--indigo);font-size:19px;cursor:pointer" onclick="go('account')">H</span></div>
+        <div style="position:relative;margin-top:18px" onclick="go('search')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b4b3c2" stroke-width="2.2" stroke-linecap="round" style="position:absolute;left:15px;top:16px"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          <div style="background:#fff;border:1px solid var(--line2);border-radius:16px;padding:15px 16px 15px 44px;font-size:15px;color:var(--muted2);font-weight:500">Search diagnosis, clinic, medicine, results</div>
+        </div>
+        <div class="memb" style="margin-top:20px">
+          <div class="m"><div class="ring" style="background:var(--indigo);box-shadow:0 0 0 3px #fff,0 0 0 5px var(--indigo)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><circle cx="16" cy="9" r="2.6"/><path d="M4 19c0-3 2.4-5 5-5s5 2 5 5"/><path d="M14.5 19c0-2.4 1.4-4 3.5-4"/></svg></div><div class="lab">Everyone</div></div>
+          <div class="m" onclick="go('profileedit')"><div class="ring" style="background:var(--purple)">H</div><div class="lab off">Ha My</div></div>
+          <div class="m"><div class="ring" style="background:var(--pink)">M</div><div class="lab off">Mẹ</div></div>
+        </div>
+        <div class="row" style="margin-top:22px"><div class="grow"><span style="font-size:19px;font-weight:800;color:var(--ink)">All records</span> <span class="muted" style="font-weight:700">4</span></div>
+          <div style="background:#fff;border:1px solid var(--line2);border-radius:999px;padding:9px 15px;font-size:13.5px;font-weight:800;color:var(--ink);display:flex;gap:8px;align-items:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--indigo)" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M6 12h12M9 18h6"/></svg>Newest</div></div>
+        <div style="margin:20px 0 12px;font-size:14px;font-weight:800;color:var(--ink)">September 2025 <span class="muted" style="float:right;font-weight:600">2 visits</span></div>
+        <div class="card reccard" onclick="go('detail')"><div class="recicon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></div><div class="grow"><div class="rectitle trunc">Nhiễm khuẩn hệ tiết niệu (Viêm bàng…</div><div class="recsub">📍 Bệnh viện Đa khoa Tâm Anh</div><div style="margin-top:9px" class="row"><span class="chip"><span class="d" style="background:var(--purple)">H</span>Ha My</span><span class="muted" style="font-size:13px;font-weight:600;margin-left:8px">Sep 24</span></div></div></div>
+        <div class="card reccard"><div class="recicon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></div><div class="grow"><div class="rectitle trunc">Viêm họng cấp</div><div class="recsub">📍 Phòng khám Quốc tế Victoria</div><div style="margin-top:9px" class="row"><span class="chip pink"><span class="d" style="background:var(--pink)">M</span>Mẹ</span><span class="muted" style="font-size:13px;font-weight:600;margin-left:8px">Sep 09</span></div></div></div>
+        <div style="margin:20px 0 12px;font-size:14px;font-weight:800;color:var(--ink)">July 2025 <span class="muted" style="float:right;font-weight:600">2 visits</span></div>
+        <div class="card reccard"><div class="recicon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></div><div class="grow"><div class="rectitle trunc">Khám sức khỏe tổng quát</div><div class="recsub">📍 Bệnh viện Vinmec</div><div style="margin-top:9px" class="row"><span class="chip"><span class="d" style="background:var(--purple)">H</span>Ha My</span><span class="muted" style="font-size:13px;font-weight:600;margin-left:8px">Jul 03</span></div></div></div>
+        <div class="card reccard" style="margin-bottom:120px"><div class="recicon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></div><div class="grow"><div class="rectitle trunc">Trào ngược dạ dày thực quản</div><div class="recsub">📍 Phòng khám Đa khoa Medlatec</div><div style="margin-top:9px" class="row"><span class="chip pink"><span class="d" style="background:var(--pink)">M</span>Mẹ</span><span class="muted" style="font-size:13px;font-weight:600;margin-left:8px">Jul 01</span></div></div></div>
+      </div>
+    </div>
+    <div class="abs-bottom bottombar"><button class="fab" onclick="go('capture')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4Z"/><circle cx="12" cy="13" r="3.5"/></svg>Add record</button></div>
+  </section>
+
+  <!-- ===== SEARCH ===== -->
+  <section class="screen" data-screen="search">
+    <div class="pad" style="padding-top:22px">
+      <div class="row" style="gap:10px"><div class="grow" style="position:relative">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--indigo)" stroke-width="2.2" stroke-linecap="round" style="position:absolute;left:15px;top:16px"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+        <div style="background:#fff;border:1px solid var(--indigo);border-radius:16px;padding:15px 16px 15px 44px;font-size:15px;color:var(--ink);font-weight:700">viem bang quang</div></div>
+        <button class="link" onclick="go('home')">Cancel</button></div>
+      <p class="muted" style="font-size:12.5px;font-weight:600;margin-top:14px">1 result · accent-insensitive</p>
+    </div>
+    <div class="scroll pad" style="padding-top:8px">
+      <div class="card reccard" onclick="go('detail')"><div class="recicon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></div><div class="grow"><div class="rectitle trunc">Nhiễm khuẩn hệ tiết niệu (Viêm bàng…</div><div class="recsub">📍 Bệnh viện Đa khoa Tâm Anh</div><div style="margin-top:9px" class="row"><span class="chip"><span class="d" style="background:var(--purple)">H</span>Ha My</span><span class="muted" style="font-size:13px;font-weight:600;margin-left:8px">Sep 24</span></div></div></div>
+    </div>
+  </section>
+
+  <!-- ===== CAPTURE · attach photos ===== -->
+  <section class="screen" data-screen="capture">
+    <div class="topbar"><div class="iconbtn" onclick="go('home')">‹</div><div><div class="toptitle">New record</div><div class="tsub">Step 1 of 2 · Add photos</div></div></div>
+    <div class="scroll pad" style="padding-top:14px">
+      <div class="seclabel" style="margin-bottom:8px">Snap the paperwork</div>
+      <p class="muted" style="font-size:14px;font-weight:500;line-height:1.5;margin:0 0 18px">Add the exam result and prescription. We'll read them for you.</p>
+      <div class="row" style="gap:14px;align-items:stretch">
+        <div style="flex:1;display:flex;flex-direction:column;gap:10px">
+          <div style="position:relative;aspect-ratio:5/6;background:#fff;border:1px solid var(--line2);border-radius:16px;padding:16px 16px 14px;box-shadow:0 4px 14px rgba(30,27,75,.05);display:flex;flex-direction:column">
+            <div style="height:7px;width:52%;background:#e2e0ec;border-radius:4px;margin-bottom:9px"></div>
+            <div style="height:7px;width:86%;background:#eeedf4;border-radius:4px;margin-bottom:9px"></div>
+            <div style="height:7px;width:70%;background:#eeedf4;border-radius:4px;margin-bottom:9px"></div>
+            <div style="height:7px;width:44%;background:#eeedf4;border-radius:4px"></div>
+            <div style="margin-top:auto;display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:#10b981;flex:none"></span><div style="height:6px;flex:1;background:#cdeede;border-radius:4px"></div></div>
+            <span style="position:absolute;top:-7px;right:-7px;width:25px;height:25px;border-radius:50%;background:#10b981;display:grid;place-items:center;box-shadow:0 0 0 3px var(--bg)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 6"/></svg></span>
+          </div>
+          <div style="text-align:center;font-size:13px;font-weight:600;color:var(--ink2)">Exam result</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:10px">
+          <div style="aspect-ratio:5/6;border:1.5px dashed #cdd0dd;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;background:#fbfbfe;cursor:pointer">
+            <span style="width:44px;height:44px;border-radius:50%;background:var(--indigo-soft);display:grid;place-items:center;color:var(--indigo)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3.2"/></svg></span>
+            <span style="font-size:13px;font-weight:700;color:var(--muted2)">Tap to add</span>
+          </div>
+          <div style="text-align:center;font-size:13px;font-weight:600;color:var(--muted2)">Prescription</div>
+        </div>
+      </div>
+      <button class="btn" style="margin-top:22px;display:flex;align-items:center;justify-content:center;gap:9px" onclick="go('reading')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3l1.9 5.1L20 10l-5.1 1.9L13 17l-1.9-5.1L6 10l5.1-1.9L13 3Z"/><path d="M5 15v3M3.5 16.5h3"/></svg> Read photos with AI</button>
+      <button style="width:100%;margin-top:10px;background:#fff;border:1px solid var(--line2);border-radius:14px;padding:14px 16px;font-family:inherit;font-weight:800;font-size:14px;color:var(--ink2);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="go('review')"><span style="display:flex;align-items:center;gap:10px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Or fill in the details by hand</span><span style="color:#c4c3d0">›</span></button>
+    </div>
+  </section>
+
+  <!-- ===== AI READING ===== -->
+  <section class="screen" data-screen="reading">
+    <div class="topbar"><div class="iconbtn" onclick="go('capture')">‹</div><div><div class="toptitle">New record</div><div class="tsub">Reading your photos…</div></div></div>
+    <div class="scroll" style="display:flex;flex-direction:column;align-items:center;padding:14px 20px 0">
+      <div style="position:relative;width:132px;height:150px;margin:26px 0 6px">
+        <div style="position:absolute;inset:0;background:#fff;border:1px solid var(--line2);border-radius:14px;box-shadow:0 22px 44px -18px rgba(30,27,75,.28);transform:rotate(-3deg);padding:20px 18px">
+          <div style="height:6px;width:48%;background:#e2e0ec;border-radius:4px;margin-bottom:11px"></div>
+          <div style="height:6px;width:82%;background:#eeedf4;border-radius:4px;margin-bottom:11px"></div>
+          <div style="height:6px;width:64%;background:#eeedf4;border-radius:4px;margin-bottom:11px"></div>
+          <div style="height:6px;width:74%;background:#eeedf4;border-radius:4px"></div>
+        </div>
+        <div style="position:absolute;left:6%;right:6%;top:53%;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(99,102,241,0),var(--indigo),rgba(99,102,241,0));box-shadow:0 0 14px 2px rgba(99,102,241,.45)"></div>
+      </div>
+      <div style="margin:14px 0 20px"><svg width="42" height="42" viewBox="0 0 42 42"><circle cx="21" cy="21" r="17" fill="none" stroke="#e7e7f0" stroke-width="3.5"/><path d="M21 4a17 17 0 0 1 12.02 5" fill="none" stroke="var(--indigo)" stroke-width="3.5" stroke-linecap="round"/></svg></div>
+      <div style="font-size:20px;font-weight:800;color:var(--ink)">Reading your photos</div>
+      <div class="muted" style="font-size:13.5px;font-weight:500;margin-top:6px;text-align:center;line-height:1.5">Pulling out diagnosis, hospital, date &amp; medicines</div>
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:22px">
+        <div class="card" style="display:flex;align-items:center;gap:12px;padding:15px 16px"><span style="width:24px;height:24px;border-radius:50%;background:#10b981;display:grid;place-items:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 6"/></svg></span><span style="font-weight:800;color:var(--ink);font-size:14.5px">Diagnosis found</span></div>
+        <div class="card" style="display:flex;align-items:center;gap:12px;padding:15px 16px"><span style="width:24px;height:24px;border-radius:50%;background:#10b981;display:grid;place-items:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 6"/></svg></span><span style="font-weight:800;color:var(--ink);font-size:14.5px">Hospital &amp; date</span></div>
+        <div style="display:flex;align-items:center;gap:12px;padding:15px 16px;background:#fff;border:1px solid var(--line2);border-radius:18px;opacity:.72"><span style="width:24px;height:24px;border-radius:50%;border:2.5px solid #cbcad8;flex:none"></span><span style="font-weight:700;color:var(--muted2);font-size:14.5px">Reading prescription…</span></div>
+      </div>
+      <button class="link" onclick="go('review')" style="color:var(--indigo);margin:16px 0 20px">Continue ›</button>
+    </div>
+  </section>
+
+  <!-- ===== REVIEW ===== -->
+  <section class="screen" data-screen="review">
+    <div class="topbar"><div class="iconbtn" onclick="go('capture')">‹</div><div class="toptitle">Review record</div></div>
+    <div class="scroll pad" style="padding-top:10px">
+      <span style="display:inline-block;background:var(--indigo-soft);color:var(--indigo);font-weight:800;font-size:12.5px;padding:6px 11px;border-radius:999px">✨ Auto-filled from your photos</span>
+      <div class="row" style="gap:8px;margin:16px 0 12px"><button class="segbtn on hh">H&nbsp;Ha My</button><button class="segbtn">M&nbsp;Mẹ</button></div>
+      <div class="seclabel" style="margin:6px 0 10px">Medical record</div>
+      <div class="field"><div class="flabel">Diagnosis *</div><div class="fbox" style="min-height:auto;padding:13px 14px">Nhiễm khuẩn hệ tiết niệu (Viêm bàng quang)</div></div>
+      <div class="frow"><div class="field grow"><div class="flabel">Clinic *</div><div class="fbox" style="min-height:auto;padding:13px 14px">Bệnh viện Đa khoa Tâm Anh</div></div><div class="field" style="width:126px"><div class="flabel">Date</div><div class="fbox">24/09/2025</div></div></div>
+      <div class="field"><div class="flabel">Disease process *</div><div class="fbox" style="display:block;min-height:auto;padding:13px 14px;line-height:1.45">Viêm bàng quang do Proteus mirabilis (40000 CFU/ml)</div></div>
+      <div class="frow"><div class="field grow"><div class="flabel">Doctor</div><div class="fbox">TS.BS. Đỗ Thị Hạnh</div></div><div class="field" style="width:120px"><div class="flabel">ICD code</div><div class="fbox">N39.0</div></div></div>
+      <div class="seclabel" style="margin:6px 0 10px">Test &amp; scan results</div>
+      <div class="card" style="padding:14px;margin-bottom:12px;border:1px solid var(--line2)"><div style="font-weight:800;color:var(--ink);font-size:14px;line-height:1.35">Siêu âm ổ bụng (gan mật, tụy, lách, thận, bàng quang)</div><div class="muted" style="font-size:13px;margin-top:6px;line-height:1.4">Hình ảnh khối lồng ruột non vùng hố chậu phải…</div></div>
+      <div class="card" style="padding:14px;margin-bottom:20px;border:1px solid var(--line2)"><div style="font-weight:800;color:var(--ink);font-size:14px">Vi khuẩn nuôi cấy, định danh và kháng thuốc</div><div class="muted" style="font-size:13px;margin-top:6px">Proteus mirabilis (40000 CFU/ml)</div></div>
+    </div>
+    <div class="bottombar"><button class="btn" onclick="go('detail')">Save record</button></div>
+  </section>
+
+  <!-- ===== DETAIL ===== -->
+  <section class="screen" data-screen="detail">
+    <div class="topbar"><div class="iconbtn" onclick="go('home')">‹</div><div class="grow"><div class="toptitle">Visit</div></div><div class="iconbtn" onclick="go('editrecord')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div></div>
+    <div class="scroll pad" style="padding-top:10px">
+      <div class="card" style="padding:20px;margin-bottom:14px"><div class="row" style="gap:14px;align-items:flex-start"><div class="recicon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></div><div><div style="font-size:20px;font-weight:800;color:var(--ink);line-height:1.2">Nhiễm khuẩn hệ tiết niệu (Viêm bàng quang)</div><div class="muted" style="font-size:14px;font-weight:600;margin-top:6px">N39.0 · September 24, 2025</div></div></div><div style="margin-top:16px"><span class="chip"><span class="d" style="background:var(--purple)">H</span>Ha My</span></div></div>
+      <div class="card" style="margin-bottom:14px"><div class="inforow"><span class="infok">Clinic</span><span class="infov">Bệnh viện Đa khoa Tâm Anh</span></div><div class="inforow"><span class="infok">Doctor</span><span class="infov">TS.BS. Đỗ Thị Hạnh</span></div></div>
+      <div class="card" style="padding:18px;margin-bottom:14px"><div class="seclabel">Disease process</div><div style="color:var(--ink);font-size:14.5px;font-weight:600;margin-top:8px;line-height:1.4">Viêm bàng quang do Proteus mirabilis (40000 CFU/ml)</div></div>
+      <div class="seclabel" style="margin:6px 0 10px">Test &amp; scan results</div>
+      <div class="card reccard" style="align-items:center"><div class="recicon" style="width:44px;height:44px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></div><div class="grow"><div style="font-weight:800;color:var(--ink);font-size:14px;line-height:1.3">Siêu Âm Ổ Bụng (Gan Mật, Tụy, Lách, Thận…)</div><div class="muted" style="font-size:13px;margin-top:4px">Hình ảnh khối lồng ruột non vùng hố chậu phải…</div></div></div>
+      <div class="card reccard" style="align-items:center;margin-bottom:14px"><div class="recicon" style="width:44px;height:44px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></div><div class="grow"><div style="font-weight:800;color:var(--ink);font-size:14px">Vi Khuẩn Nuôi Cấy, Định Danh Và Kháng Thuốc</div><div class="muted" style="font-size:13px;margin-top:4px">Proteus mirabilis (40000 CFU/ml)</div></div></div>
+      <div class="seclabel" style="margin:6px 0 10px">Attached photos</div>
+      <div class="row" style="gap:10px;padding-bottom:30px"><div class="doc" style="width:74px;height:94px"></div><div class="doc" style="width:74px;height:94px"></div></div>
+    </div>
+  </section>
+
+  <!-- ===== EDIT RECORD ===== -->
+  <section class="screen" data-screen="editrecord">
+    <div class="topbar"><div class="iconbtn" onclick="go('detail')">‹</div><div class="toptitle">Edit record</div></div>
+    <div class="scroll pad" style="padding-top:12px">
+      <div class="flabel" style="margin-bottom:8px">Who is this for?</div>
+      <div class="row" style="gap:8px;margin-bottom:16px"><button class="segbtn on hh">H&nbsp;Ha My</button><button class="segbtn">M&nbsp;Mẹ</button></div>
+      <div class="seclabel" style="margin-bottom:10px">Documents</div>
+      <div class="row" style="gap:10px;margin-bottom:12px"><div class="doc"></div><div class="doc"></div></div>
+      <div class="dashed">+ Add documents</div>
+      <p class="muted" style="font-size:12.5px;margin:10px 0 16px">Forgot a page? Add it and we'll read it in, filling only the blanks.</p>
+      <div class="seclabel" style="margin-bottom:10px">Medical record</div>
+      <div class="field"><div class="flabel">Diagnosis *</div><input class="inp" value="Nhiễm khuẩn hệ tiết niệu (Viêm bàng quang)"></div>
+      <div class="frow"><div class="field grow"><div class="flabel">Clinic *</div><input class="inp" value="Bệnh viện Đa khoa Tâm Anh"></div><div class="field" style="width:126px"><div class="flabel">Date</div><input class="inp" value="24/09/2025"></div></div>
+      <div class="field"><div class="flabel">Doctor</div><input class="inp" value="TS.BS. Đỗ Thị Hạnh"></div>
+      <div class="seclabel" style="margin:6px 0 10px">Prescription · drugs</div>
+      <div class="dashed" style="margin-bottom:22px">+ Add</div>
+    </div>
+    <div class="bottombar"><button class="btn" onclick="go('detail')">Save changes</button><div class="center" style="margin-top:8px"><button class="link" style="color:#e0455a" onclick="go('home')">Delete record</button></div></div>
+  </section>
+
+  <!-- ===== ACCOUNT ===== -->
+  <section class="screen" data-screen="account">
+    <div class="topbar"><div class="iconbtn" onclick="go('home')">‹</div><div class="toptitle">Account</div></div>
+    <div class="scroll pad" style="padding-top:8px">
+      <div class="listcard" style="margin-bottom:16px"><div class="listrow" onclick="go('profileedit')"><span class="avatar" style="width:54px;height:54px;background:var(--purple);font-size:20px">H</span><div class="grow"><div style="font-weight:800;color:var(--ink);font-size:16px">Ha My</div><div class="muted" style="font-size:12.5px;font-weight:500">hamy@email.com</div></div><span style="color:#c4c3d0">›</span></div></div>
+      <div class="seclabel" style="margin:4px 4px 8px">Switch family</div>
+      <div class="listcard" style="margin-bottom:16px">
+        <div class="listrow"><span class="grow" style="font-weight:700;color:var(--ink);font-size:14.5px">Gia đình Ha My</span><span style="background:#eef0f4;color:#8d8c9c;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px">Owner</span><span style="color:var(--indigo);font-weight:800">✓</span></div>
+        <div class="listrow"><span class="grow" style="font-weight:700;color:var(--ink);font-size:14.5px">Nhà ngoại</span><span style="background:#eef0f4;color:#8d8c9c;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px">Can edit</span></div>
+      </div>
+      <div class="listcard" style="margin-bottom:16px"><div class="listrow" onclick="go('household')"><span class="grow" style="font-weight:700;color:var(--ink);font-size:14.5px">Household</span><span class="muted" style="font-size:12.5px;font-weight:700">Gia đình Ha My</span><span style="color:#c4c3d0">›</span></div>
+        <div class="listrow" onclick="go('home')"><span class="grow" style="font-weight:700;color:var(--ink);font-size:14.5px">Family members</span><span class="muted" style="font-size:12.5px;font-weight:700">2</span><span style="color:#c4c3d0">›</span></div></div>
+      <button class="btn ghost" style="color:#e0455a;border-color:#f6dde1;margin-bottom:16px" onclick="go('signin')">Sign out</button>
+    </div>
+  </section>
+
+  <!-- ===== HOUSEHOLD ===== -->
+  <section class="screen" data-screen="household">
+    <div class="topbar"><div class="iconbtn" onclick="go('account')">‹</div><div class="toptitle">Household</div></div>
+    <div class="scroll pad" style="padding-top:8px">
+      <div class="card" style="padding:18px;margin-bottom:20px"><div class="seclabel">Family name</div><div style="font-size:18px;font-weight:800;color:var(--ink);margin-top:6px">Gia đình Ha My</div></div>
+      <div class="seclabel" style="margin:0 0 6px">People with access</div>
+      <p class="muted" style="font-size:12.5px;font-weight:500;margin:0 0 12px;line-height:1.45">Caregivers who can sign in and share this family's records.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="row" style="gap:12px;background:#fff;border:1px solid var(--line2);border-radius:16px;padding:14px"><span class="avatar" style="width:40px;height:40px;background:var(--indigo);font-size:15px">H</span><div class="grow"><div style="font-weight:800;color:var(--ink);font-size:14px">You</div><div class="muted" style="font-size:12px">hamy@email.com</div></div><span style="background:#eef0f4;color:#8d8c9c;font-size:11.5px;font-weight:800;padding:5px 10px;border-radius:999px">Owner</span></div>
+        <div class="row" style="gap:12px;background:#fff;border:1px solid var(--line2);border-radius:16px;padding:14px"><span class="avatar" style="width:40px;height:40px;background:#10b981;font-size:15px">B</span><div class="grow"><div class="row" style="gap:6px"><span style="font-weight:800;color:var(--ink);font-size:14px">Bố</span></div><div class="muted" style="font-size:12px">bo@email.com</div></div><div style="border:1px solid var(--line2);border-radius:10px;padding:6px 8px;font-size:12px;font-weight:800;color:var(--ink2)">Can edit ▾</div></div>
+        <div class="row" style="gap:12px;background:#fff;border:1px solid var(--line2);border-radius:16px;padding:14px"><span class="avatar" style="width:40px;height:40px;background:#f59e0b;font-size:15px">D</span><div class="grow"><div class="row" style="gap:6px"><span style="font-weight:800;color:var(--ink);font-size:14px">Dì</span><span style="background:#fff5e6;color:#d0900f;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px">pending</span></div><div class="muted" style="font-size:12px">di@email.com</div></div><div style="border:1px solid var(--line2);border-radius:10px;padding:6px 8px;font-size:12px;font-weight:800;color:var(--ink2)">View only ▾</div></div>
+      </div>
+      <button class="dashed" style="width:100%;margin-top:14px;border-width:1.5px" onclick="go('invite')">+ Invite a co-manager</button>
+    </div>
+  </section>
+
+  <!-- ===== INVITE (multi) ===== -->
+  <section class="screen" data-screen="invite">
+    <div class="topbar"><div class="iconbtn" onclick="go('household')">‹</div><div class="toptitle">Invite people</div></div>
+    <div class="scroll pad" style="padding-top:10px">
+      <p class="muted" style="font-size:13.5px;font-weight:500;line-height:1.5">Invite a co-manager, or give someone edit or view-only access. Add as many people as you like.</p>
+      <div style="margin-top:16px"><input class="inp" placeholder="name@email.com" value=""></div>
+      <div class="row" style="gap:10px;margin-top:10px"><div class="fbox grow" style="justify-content:space-between">Can edit records <span class="muted">▾</span></div><button class="segbtn" style="background:var(--indigo-soft);border-color:transparent;color:var(--indigo)">+ Add</button></div>
+      <div class="seclabel" style="margin:20px 0 10px">Invites (2)</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="row" style="gap:10px;background:#fff;border:1px solid var(--line2);border-radius:12px;padding:11px 14px"><span class="grow trunc" style="font-weight:700;color:var(--ink);font-size:13.5px">bo@email.com</span><span style="background:#eef0f4;color:#8d8c9c;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px">Co-manager</span><span class="muted" style="cursor:pointer">✕</span></div>
+        <div class="row" style="gap:10px;background:#fff;border:1px solid var(--line2);border-radius:12px;padding:11px 14px"><span class="grow trunc" style="font-weight:700;color:var(--ink);font-size:13.5px">bacsi@clinic.vn</span><span style="background:#eef0f4;color:#8d8c9c;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px">View only</span><span class="muted" style="cursor:pointer">✕</span></div>
+      </div>
+    </div>
+    <div class="bottombar"><button class="btn" onclick="go('invitesready')">Send 2 invites</button></div>
+  </section>
+
+  <!-- ===== INVITES READY ===== -->
+  <section class="screen" data-screen="invitesready">
+    <div class="topbar"><div class="toptitle">Invites ready</div></div>
+    <div class="scroll pad" style="padding-top:10px">
+      <p class="muted" style="font-size:13.5px;font-weight:500;line-height:1.5">Send each person their link, copy it or email it. They join after signing in.</p>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+        <div class="card" style="padding:14px"><div class="row" style="gap:8px"><span class="grow trunc" style="font-weight:800;color:var(--ink);font-size:14px">bo@email.com</span><span style="background:#eef0f4;color:#8d8c9c;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px">Co-manager</span></div><div class="row" style="gap:8px;margin-top:10px"><button class="segbtn grow" style="justify-content:center">Copy link</button><button class="segbtn grow on" style="justify-content:center;background:var(--indigo);border-color:var(--indigo)">Email</button></div></div>
+        <div class="card" style="padding:14px"><div class="row" style="gap:8px"><span class="grow trunc" style="font-weight:800;color:var(--ink);font-size:14px">bacsi@clinic.vn</span><span style="background:#eef0f4;color:#8d8c9c;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px">View only</span></div><div class="row" style="gap:8px;margin-top:10px"><button class="segbtn grow" style="justify-content:center">Copy link</button><button class="segbtn grow on" style="justify-content:center;background:var(--indigo);border-color:var(--indigo)">Email</button></div></div>
+      </div>
+    </div>
+    <div class="bottombar"><button class="btn dark" onclick="go('home')">Done → your records</button></div>
+  </section>
+
+  <!-- ===== JOIN (accept invite) ===== -->
+  <section class="screen" data-screen="join">
+    <div class="scroll center" style="justify-content:center;display:flex;flex-direction:column;padding:0 30px;gap:16px">
+      <div style="width:72px;height:72px;border-radius:22px;background:var(--indigo-soft);display:grid;place-items:center;font-size:32px;margin:0 auto">👨‍👩‍👧</div>
+      <h1 style="font-size:24px;font-weight:800">Join <span style="color:var(--indigo)">Gia đình Ha My</span></h1>
+      <p class="ink2" style="font-size:14.5px;font-weight:500;line-height:1.55">You've been invited to help manage this family's records as a <b>co-manager</b>.</p>
+      <button class="btn" onclick="go('home')">Accept invite</button>
+      <button class="link" onclick="go('signin')">This isn't me</button>
+    </div>
+  </section>
+
+  <!-- ===== PROFILE EDIT ===== -->
+  <section class="screen" data-screen="profileedit">
+    <div class="topbar"><div class="iconbtn" onclick="go('account')">‹</div><div class="toptitle">Edit profile</div></div>
+    <div class="scroll pad" style="padding-top:12px">
+      <div class="row" style="gap:14px;margin-bottom:16px"><span class="avatar" style="width:64px;height:64px;background:var(--purple);font-size:24px">H</span>
+        <div style="display:flex;flex-wrap:wrap;gap:7px"><span style="width:26px;height:26px;border-radius:50%;background:#8b5cf6;box-shadow:0 0 0 2px #fff,0 0 0 4px #8b5cf6"></span><span style="width:26px;height:26px;border-radius:50%;background:#6366f1"></span><span style="width:26px;height:26px;border-radius:50%;background:#ec4899"></span><span style="width:26px;height:26px;border-radius:50%;background:#10b981"></span></div></div>
+      <div class="field"><div class="flabel">Name</div><input class="inp" value="Ha My"></div>
+      <div class="frow"><div class="field grow"><div class="flabel">Date of birth</div><input class="inp" value="03/08/2003"></div><div class="field" style="width:120px"><div class="flabel">Sex</div><div class="fbox">Female</div></div></div>
+      <div class="seclabel" style="margin:6px 0 10px">Medical details · optional</div>
+      <div class="field"><div class="flabel">Blood type</div><div class="fbox">B</div></div>
+      <div class="field"><div class="flabel">Allergies</div><input class="inp" placeholder="e.g. Penicillin, seafood" value=""></div>
+      <button class="btn" style="margin-top:4px" onclick="go('account')">Save</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- screen index -->
+<button class="idx-btn" onclick="toggleIdx()">≡ Screens</button>
+<div class="idx" id="idx" onclick="if(event.target.id==='idx')toggleIdx()">
+  <div class="idx-inner">
+    <h3>Family Pal · prototype</h3>
+    <div class="muted" style="font-size:13px;font-weight:500">Every screen. Tap through it like the real app, or jump anywhere below.</div>
+    <div class="idx-grid" id="idxgrid"></div>
+  </div>
+</div>
+
+<script>
+  var SCREENS = [
+    ["Onboarding", ["welcome","signup","signin","confirm","setup","choice","addfamily"]],
+    ["Records & AI", ["home","search","capture","reading","review","detail","editrecord"]],
+    ["Co-management", ["account","household","invite","invitesready","join","profileedit"]],
+  ];
+  var LABELS = {welcome:"Welcome",signup:"Sign up",signin:"Sign in",confirm:"Confirm email",setup:"Set up profile",choice:"Individual / family",addfamily:"Add family",home:"Home / records",search:"Search",capture:"Add record",reading:"Reading",review:"Review (auto-filled)",detail:"Record detail",editrecord:"Edit record",account:"Account",household:"Household & roles",invite:"Invite people",invitesready:"Invites ready",join:"Accept invite",profileedit:"Edit profile"};
+  function go(name){
+    document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on', s.dataset.screen===name);});
+    var sc=document.querySelector('.screen.on .scroll'); if(sc) sc.scrollTop=0;
+    location.hash=name; document.getElementById('idx').classList.remove('on');
+  }
+  function toggleIdx(){document.getElementById('idx').classList.toggle('on');}
+  var grid=document.getElementById('idxgrid');
+  SCREENS.forEach(function(g){
+    var h=document.createElement('div'); h.className='g'; h.textContent=g[0]; grid.appendChild(h);
+    g[1].forEach(function(n){var b=document.createElement('button'); b.textContent=LABELS[n]; b.onclick=function(){go(n);}; grid.appendChild(b);});
+  });
+  go((location.hash||'#welcome').slice(1));
+</script>
+</body>
+</html>
