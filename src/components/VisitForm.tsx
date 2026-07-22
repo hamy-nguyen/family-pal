@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { memberColor } from "@/lib/ui";
 import { extractImages } from "@/lib/extract";
-import { AddPhotos, PhotoSourceRow } from "@/components/AddPhotos";
+import { AddPhotos } from "@/components/AddPhotos";
 import { PhotoViewer } from "@/components/PhotoViewer";
 import type {
   Profile,
@@ -202,7 +202,11 @@ export function VisitForm({
             </div>
           )}
           <AddPhotos onPhotos={addDocuments}>
-            {(a) => <PhotoSourceRow {...a} />}
+            {(open) => (
+              <button onClick={open} className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-dashed border-[#cdd0dd] bg-[#fbfbfe] py-2.5 text-[13px] font-bold text-[#6366f1]">
+                + Add documents
+              </button>
+            )}
           </AddPhotos>
           {photos.length > 0 && (
             <span className="text-[11.5px] font-medium text-[#9b9aaa]">
