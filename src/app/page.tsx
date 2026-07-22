@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import { repo } from "@/lib/repo";
 import { useAuth } from "@/components/AuthProvider";
 import { AddPhotos } from "@/components/AddPhotos";
@@ -268,15 +268,26 @@ export default function RetrieveScreen() {
 
       {can("records:create") && (
         <AddPhotos onPhotos={onCapture}>
-          {(open) => (
-            <button
-              onClick={open}
-              className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 cursor-pointer items-center gap-[9px] rounded-full bg-[#6366f1] px-6 py-[15px] text-[15px] font-bold text-white shadow-[0_12px_28px_rgba(99,102,241,0.45)] active:scale-[0.98]"
-              aria-label="Add record"
-            >
-              <CameraIcon />
-              Add record
-            </button>
+          {({ openCamera, openLibrary }) => (
+            <div className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2.5">
+              {/* Camera = the multi-shot scanner (its own clearly-labeled control) */}
+              <button
+                onClick={openCamera}
+                aria-label="Take photos"
+                className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-full border border-[#e4e3ec] bg-white text-[#6366f1] shadow-[0_10px_24px_rgba(30,27,75,0.14)] active:scale-[0.97]"
+              >
+                <CameraIcon size={22} stroke="#6366f1" />
+              </button>
+              {/* Primary = add a record; opens the native photo picker directly */}
+              <button
+                onClick={openLibrary}
+                className="flex cursor-pointer items-center gap-[9px] rounded-full bg-[#6366f1] px-6 py-[15px] text-[15px] font-bold text-white shadow-[0_12px_28px_rgba(99,102,241,0.45)] active:scale-[0.98]"
+                aria-label="Add record"
+              >
+                <Plus size={18} strokeWidth={2.6} />
+                Add record
+              </button>
+            </div>
           )}
         </AddPhotos>
       )}

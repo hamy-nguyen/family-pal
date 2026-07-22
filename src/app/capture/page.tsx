@@ -10,7 +10,7 @@ import { takePendingImages } from "@/lib/captureBuffer";
 import { Header } from "@/components/Header";
 import { SparkleIcon } from "@/lib/ui";
 import { extractImages } from "@/lib/extract";
-import { AddPhotos } from "@/components/AddPhotos";
+import { AddPhotos, PhotoSourceRow } from "@/components/AddPhotos";
 import { PhotoViewer } from "@/components/PhotoViewer";
 import { VisitForm, EMPTY_VISIT_VALUE, mergeExtraction, type VisitFormValue } from "@/components/VisitForm";
 import type { Profile } from "@/lib/types";
@@ -112,11 +112,7 @@ export default function CaptureScreen() {
             </div>
           ))}
           <AddPhotos onPhotos={(urls) => setPhotos((p) => [...p, ...urls])}>
-            {(open) => (
-              <button onClick={open} className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-dashed border-[#cdd0dd] bg-[#fbfbfe] py-3 text-[13px] font-bold text-[#6366f1]">
-                + Add documents
-              </button>
-            )}
+            {(a) => <PhotoSourceRow {...a} />}
           </AddPhotos>
           <button
             onClick={() => extractFrom(photos)}
