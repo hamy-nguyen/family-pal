@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { repo } from "@/lib/repo";
 import { useAuth } from "@/components/AuthProvider";
-import { compressImage } from "@/lib/compress";
+import { AddPhotos } from "@/components/AddPhotos";
 import { setPendingImages } from "@/lib/captureBuffer";
 import type { Profile, Visit } from "@/lib/types";
 import {
@@ -81,19 +81,9 @@ export default function RetrieveScreen() {
     setVisits((vs) => vs.filter((v) => v.id !== id));
   }
 
-  async function onCapture(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
-    e.target.value = "";
-    const readFile = (f: File): Promise<string> =>
-      new Promise((res) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result as string);
-        r.readAsDataURL(f);
-      });
-    const urls = await Promise.all(
-      files.map(async (f) => compressImage(await readFile(f)))
-    );
+  // AddPhotos already compressed these; stash them and let /capture auto-read.
+  function onCapture(urls: string[]) {
+    if (urls.length === 0) return;
     setPendingImages(urls);
     router.push("/capture");
   }
@@ -277,20 +267,18 @@ export default function RetrieveScreen() {
       </div>
 
       {can("records:create") && (
-        <label
-          className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 cursor-pointer items-center gap-[9px] rounded-full bg-[#6366f1] px-6 py-[15px] text-[15px] font-bold text-white shadow-[0_12px_28px_rgba(99,102,241,0.45)] active:scale-[0.98]"
-          aria-label="Add record"
-        >
-          <CameraIcon />
-          Add record
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={onCapture}
-            className="hidden"
-          />
-        </label>
+        <AddPhotos onPhotos={onCapture}>
+          {(open) => (
+            <button
+              onClick={open}
+              className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 cursor-pointer items-center gap-[9px] rounded-full bg-[#6366f1] px-6 py-[15px] text-[15px] font-bold text-white shadow-[0_12px_28px_rgba(99,102,241,0.45)] active:scale-[0.98]"
+              aria-label="Add record"
+            >
+              <CameraIcon />
+              Add record
+            </button>
+          )}
+        </AddPhotos>
       )}
     </main>
   );

@@ -6,23 +6,17 @@ import { repo } from "@/lib/repo";
 import { useAuth } from "@/components/AuthProvider";
 import { supabaseConfigured } from "@/lib/supabase";
 import { uploadImages } from "@/lib/uploadImage";
-import { compressImage } from "@/lib/compress";
 import { takePendingImages } from "@/lib/captureBuffer";
 import { Header } from "@/components/Header";
 import { SparkleIcon } from "@/lib/ui";
 import { extractImages } from "@/lib/extract";
+import { AddPhotos } from "@/components/AddPhotos";
+import { PhotoViewer } from "@/components/PhotoViewer";
 import { VisitForm, EMPTY_VISIT_VALUE, mergeExtraction, type VisitFormValue } from "@/components/VisitForm";
 import type { Profile } from "@/lib/types";
 
 type Step = "documents" | "extracting" | "review";
 type Stage = "ocr" | "structure";
-
-const readFile = (f: File): Promise<string> =>
-  new Promise((res) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result as string);
-    r.readAsDataURL(f);
-  });
 
 export default function CaptureScreen() {
   const router = useRouter();
@@ -34,6 +28,7 @@ export default function CaptureScreen() {
   const [step, setStep] = useState<Step>("documents");
   const [stage, setStage] = useState<Stage>("ocr");
   const [error, setError] = useState<string>();
+  const [viewer, setViewer] = useState<number | null>(null); // open photo index
 
   // Viewers can't create records — bounce anyone who reaches this by URL.
   useEffect(() => {
@@ -52,14 +47,6 @@ export default function CaptureScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function addPhotos(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
-    e.target.value = "";
-    const urls = await Promise.all(files.map(async (f) => compressImage(await readFile(f))));
-    setPhotos((p) => [...p, ...urls]);
-  }
 
   async function extractFrom(imgs: string[]) {
     const list = imgs.filter(Boolean);
@@ -116,18 +103,21 @@ export default function CaptureScreen() {
             <div key={i} className="flex items-center gap-3 rounded-[16px] border border-[#efeef6] bg-white p-3 shadow-[0_4px_18px_rgba(30,27,75,0.05)]">
               {src ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={src} alt="" className="h-14 w-11 rounded-lg object-cover" />
+                <img src={src} alt="" onClick={() => setViewer(i)} className="h-14 w-11 cursor-pointer rounded-lg object-cover" />
               ) : (
                 <div className="h-14 w-11 animate-pulse rounded-lg bg-[#eef0f4]" />
               )}
-              <span className="flex-1 text-[13.5px] font-semibold text-[#4b4a5e]">Document {i + 1}</span>
+              <button onClick={() => setViewer(i)} className="flex-1 text-left text-[13.5px] font-semibold text-[#4b4a5e]">Document {i + 1}</button>
               <button onClick={() => setPhotos((p) => p.filter((_, j) => j !== i))} className="text-[#c4c3d0]">✕</button>
             </div>
           ))}
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-dashed border-[#cdd0dd] bg-[#fbfbfe] py-3 text-[13px] font-bold text-[#6366f1]">
-            + Add documents
-            <input type="file" accept="image/*" multiple onChange={addPhotos} className="hidden" />
-          </label>
+          <AddPhotos onPhotos={(urls) => setPhotos((p) => [...p, ...urls])}>
+            {(open) => (
+              <button onClick={open} className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-dashed border-[#cdd0dd] bg-[#fbfbfe] py-3 text-[13px] font-bold text-[#6366f1]">
+                + Add documents
+              </button>
+            )}
+          </AddPhotos>
           <button
             onClick={() => extractFrom(photos)}
             disabled={photos.filter(Boolean).length === 0}
@@ -190,6 +180,10 @@ export default function CaptureScreen() {
           tinted
           onSubmit={save}
         />
+      )}
+
+      {viewer !== null && photos[viewer] && (
+        <PhotoViewer photos={photos} index={viewer} onClose={() => setViewer(null)} />
       )}
     </main>
   );

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { repo } from "@/lib/repo";
 import { useAuth } from "@/components/AuthProvider";
 import { Header } from "@/components/Header";
+import { PhotoViewer } from "@/components/PhotoViewer";
 import { categoryFor, fmtLongDate, memberColor, PillIcon, ActivityIcon, PencilIcon, type MemberColor } from "@/lib/ui";
 import type { Profile, Visit } from "@/lib/types";
 
@@ -21,6 +22,7 @@ export default function VisitDetail() {
   const [visit, setVisit] = useState<Visit | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewer, setViewer] = useState<number | null>(null); // open photo index
 
   useEffect(() => {
     const r = repo();
@@ -175,14 +177,22 @@ export default function VisitDetail() {
           <div>
             <SecLabel className="ml-0.5">Attached photos</SecLabel>
             <div className="mt-2.5 grid grid-cols-3 gap-2.5">
-              {visit.attachments.map((a) => (
+              {visit.attachments.map((a, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={a.id ?? a.image_url} src={a.image_url} alt={a.caption || ""} className="aspect-[3/4] w-full rounded-[12px] object-cover" />
+                <img key={a.id ?? a.image_url} src={a.image_url} alt={a.caption || ""} onClick={() => setViewer(i)} className="aspect-[3/4] w-full cursor-pointer rounded-[12px] object-cover" />
               ))}
             </div>
           </div>
         )}
       </div>
+
+      {viewer !== null && (
+        <PhotoViewer
+          photos={visit.attachments.map((a) => a.image_url).filter(Boolean)}
+          index={viewer}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </main>
   );
 }

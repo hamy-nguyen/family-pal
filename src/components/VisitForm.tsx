@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { memberColor } from "@/lib/ui";
-import { extractImages, filesToImages } from "@/lib/extract";
+import { extractImages } from "@/lib/extract";
+import { AddPhotos } from "@/components/AddPhotos";
+import { PhotoViewer } from "@/components/PhotoViewer";
 import type {
   Profile,
   Medication,
@@ -107,17 +109,15 @@ export function VisitForm({
   const [reading, setReading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
+  const [viewer, setViewer] = useState<number | null>(null); // open photo index
   const rec = tinted ? AI : INP;
   const set = <K extends keyof VisitFormValue>(k: K, v: VisitFormValue[K]) =>
     setF((x) => ({ ...x, [k]: v }));
 
   // WHY: only the NEWLY added photos are read — the earlier batch is already
   // merged into `f`, so re-reading everything would waste time and duplicate rows.
-  async function addDocuments(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = "";
-    if (files.length === 0) return;
-    const urls = await filesToImages(files);
+  async function addDocuments(urls: string[]) {
+    if (urls.length === 0) return;
     setPhotos((p) => [...p, ...urls]);
     setReading(true);
     try {
@@ -190,7 +190,7 @@ export function VisitForm({
               {photos.map((src, i) => (
                 <div key={i} className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt="" className="h-16 w-12 rounded-[10px] border border-[#efeef6] object-cover" />
+                  <img src={src} alt="" onClick={() => setViewer(i)} className="h-16 w-12 cursor-pointer rounded-[10px] border border-[#efeef6] object-cover" />
                   <button
                     onClick={() => setPhotos((p) => p.filter((_, j) => j !== i))}
                     className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] text-[#c4c3d0] shadow-[0_1px_4px_rgba(30,27,75,0.15)]"
@@ -201,10 +201,13 @@ export function VisitForm({
               ))}
             </div>
           )}
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-dashed border-[#cdd0dd] bg-[#fbfbfe] py-2.5 text-[13px] font-bold text-[#6366f1]">
-            + Add documents
-            <input type="file" accept="image/*" multiple onChange={addDocuments} className="hidden" />
-          </label>
+          <AddPhotos onPhotos={addDocuments}>
+            {(open) => (
+              <button onClick={open} className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-dashed border-[#cdd0dd] bg-[#fbfbfe] py-2.5 text-[13px] font-bold text-[#6366f1]">
+                + Add documents
+              </button>
+            )}
+          </AddPhotos>
           {photos.length > 0 && (
             <span className="text-[11.5px] font-medium text-[#9b9aaa]">
               Forgot a page? Add it and we&apos;ll read it in — filling only the blanks.
@@ -310,6 +313,10 @@ export function VisitForm({
           {saving ? "Saving…" : reading ? "Reading…" : submitLabel}
         </button>
       </div>
+
+      {viewer !== null && photos[viewer] && (
+        <PhotoViewer photos={photos} index={viewer} onClose={() => setViewer(null)} />
+      )}
     </>
   );
 }
